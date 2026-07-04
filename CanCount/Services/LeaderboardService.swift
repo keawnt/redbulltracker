@@ -90,8 +90,13 @@ struct MockLeaderboardService: LeaderboardService {
     /// Counts derive purely from the ISO week number — no randomness at
     /// runtime, so ranks hold steady all week and reshuffle at the reset.
     private static func weeklyCount(seed: Int, week: Int) -> Int {
-        let raw = seed &* (week &+ 11) &+ (seed &* seed)
-        return 3 + ((raw % 14) + 14) % 14 // 3...16 cans
+        // splitmix64-style scramble — the naive seed*(week+k) formula collides
+        // mod 14 often enough to produce suspicious three-way ties on the podium
+        var x = UInt64(bitPattern: Int64(seed)) &* 0x9E3779B97F4A7C15
+        x ^= UInt64(bitPattern: Int64(week)) &* 0xBF58476D1CE4E5B9
+        x = (x ^ (x >> 31)) &* 0x94D049BB133111EB
+        x ^= x >> 29
+        return 3 + Int(x % 14) // 3...16 cans
     }
 
     /// Distributes a weekly total across a friend's signature flavors

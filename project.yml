@@ -9,6 +9,17 @@ settings:
     SWIFT_VERSION: "6.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
+schemes:
+  CanCount:
+    build:
+      targets:
+        CanCount: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - CanCountUITests
 targets:
   CanCount:
     type: application
@@ -29,3 +40,14 @@ targets:
         SWIFT_APPROACHABLE_CONCURRENCY: YES
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 1.0
+  CanCountUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: CanCountUITests
+    dependencies:
+      - target: CanCount
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.keawn.cancount.uitests
+        GENERATE_INFOPLIST_FILE: true

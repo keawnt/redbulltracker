@@ -40,6 +40,9 @@ struct RootTabView: View {
                 }
             }
             .tabBarMinimizeBehavior(.onScrollDown)
+            // Clearance so the floating scan button never sits on the last
+            // row of any tab's scroll content when scrolled to the end.
+            .contentMargins(.bottom, 140, for: .scrollContent)
         }
         .overlay(alignment: .bottom) {
             scanButton

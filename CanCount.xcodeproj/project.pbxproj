@@ -30,9 +30,20 @@
 		B5EAC5DB11B50BFBC5EC103B /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A78B8CE7264A04D0F6D1C87 /* GlassCard.swift */; };
 		BD17CFEFE5DC83C0EC3A3E12 /* CanCountApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6C2B7F7B96CEA0E817A0205 /* CanCountApp.swift */; };
 		C20ED568DE6AD6260D54EAD4 /* LogPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5100D105CDC0B43D79EA58E /* LogPipeline.swift */; };
+		D19B0584E25A11B89A653114 /* CanCountUIDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46F3087BC271BFD5174989FD /* CanCountUIDriver.swift */; };
 		DA058F0C68011DF110C67195 /* DataScannerRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2DAB16377915FBCDE9632 /* DataScannerRepresentable.swift */; };
 		E868DD9D3946C7989EEFD62F /* RecapCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CB24B3CB4828BD39F55D04 /* RecapCard.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		78315CA7BED1C01EC9E19EB2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D09F5CD2AA35C06E8CF753AC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E175E84FA9EEDF558B9574F;
+			remoteInfo = CanCount;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		07C4844A7F760A99116D21A8 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -40,6 +51,7 @@
 		2B07D3173DC287765D5E8069 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		31CB24B3CB4828BD39F55D04 /* RecapCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecapCard.swift; sourceTree = "<group>"; };
 		335180913B788F2DEE62C03B /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		46F3087BC271BFD5174989FD /* CanCountUIDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanCountUIDriver.swift; sourceTree = "<group>"; };
 		509A16E194D6053FC44EC75E /* OpenFoodFactsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoodFactsClient.swift; sourceTree = "<group>"; };
 		525CD6DB78938739F8B01F07 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		6A78B8CE7264A04D0F6D1C87 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
@@ -52,6 +64,7 @@
 		A69795498A31333C70636952 /* ConfettiBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiBurst.swift; sourceTree = "<group>"; };
 		B0E986C405D2A429789FEC08 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		B1C2DAB16377915FBCDE9632 /* DataScannerRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataScannerRepresentable.swift; sourceTree = "<group>"; };
+		B5E499B3C6BE6AC0A69BA427 /* CanCountUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CanCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB4E13640151793C29EA5B90 /* redbull_skus.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = redbull_skus.json; sourceTree = "<group>"; };
 		BB4FE8442260165A593C7DCB /* ScannerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerSheet.swift; sourceTree = "<group>"; };
 		DF6CD89BC70945C7CC08D0D9 /* StatsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsEngine.swift; sourceTree = "<group>"; };
@@ -153,6 +166,7 @@
 			isa = PBXGroup;
 			children = (
 				98323C5836C6FE6ECB1964EA /* CanCount */,
+				FBA4B5C6C413CB00A85CC59A /* CanCountUITests */,
 				CF82219A728D1B57BADF8824 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -174,6 +188,7 @@
 			isa = PBXGroup;
 			children = (
 				6F8836DCFB7A10516B51DED8 /* CanCount.app */,
+				B5E499B3C6BE6AC0A69BA427 /* CanCountUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -208,6 +223,14 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		FBA4B5C6C413CB00A85CC59A /* CanCountUITests */ = {
+			isa = PBXGroup;
+			children = (
+				46F3087BC271BFD5174989FD /* CanCountUIDriver.swift */,
+			);
+			path = CanCountUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -229,6 +252,24 @@
 			productReference = 6F8836DCFB7A10516B51DED8 /* CanCount.app */;
 			productType = "com.apple.product-type.application";
 		};
+		8A1843CA6B25D167FF69B556 /* CanCountUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6BFE4E8E6F40100FD757CA7 /* Build configuration list for PBXNativeTarget "CanCountUITests" */;
+			buildPhases = (
+				13C4B1922898F6F1F796957C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DFE23A9843679DB0A38980C8 /* PBXTargetDependency */,
+			);
+			name = CanCountUITests;
+			packageProductDependencies = (
+			);
+			productName = CanCountUITests;
+			productReference = B5E499B3C6BE6AC0A69BA427 /* CanCountUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -241,6 +282,11 @@
 					6E175E84FA9EEDF558B9574F = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
+					};
+					8A1843CA6B25D167FF69B556 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = 6E175E84FA9EEDF558B9574F;
 					};
 				};
 			};
@@ -259,6 +305,7 @@
 			projectRoot = "";
 			targets = (
 				6E175E84FA9EEDF558B9574F /* CanCount */,
+				8A1843CA6B25D167FF69B556 /* CanCountUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -276,6 +323,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		13C4B1922898F6F1F796957C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D19B0584E25A11B89A653114 /* CanCountUIDriver.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		14AA568B261A12E44F363641 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -307,6 +362,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DFE23A9843679DB0A38980C8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6E175E84FA9EEDF558B9574F /* CanCount */;
+			targetProxy = 78315CA7BED1C01EC9E19EB2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0540B47B4AFC086EB1B9AE71 /* Release */ = {
@@ -364,6 +427,40 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		4FCE8273339657944883FC0C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.keawn.cancount.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CanCount;
+			};
+			name = Debug;
+		};
+		777F06146E1A5BED287239EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.keawn.cancount.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CanCount;
 			};
 			name = Release;
 		};
@@ -499,6 +596,15 @@
 			buildConfigurations = (
 				A5BAA99E4B2D25D2F18B95B3 /* Debug */,
 				0540B47B4AFC086EB1B9AE71 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C6BFE4E8E6F40100FD757CA7 /* Build configuration list for PBXNativeTarget "CanCountUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4FCE8273339657944883FC0C /* Debug */,
+				777F06146E1A5BED287239EF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
