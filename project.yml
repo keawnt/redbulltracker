@@ -1,0 +1,31 @@
+name: CanCount
+options:
+  bundleIdPrefix: com.keawn
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+targets:
+  CanCount:
+    type: application
+    platform: iOS
+    sources:
+      - path: CanCount
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.keawn.cancount
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_NSCameraUsageDescription: "CanCount uses the camera to scan Red Bull barcodes."
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_STRICT_CONCURRENCY: complete
+        GENERATE_INFOPLIST_FILE: true
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
