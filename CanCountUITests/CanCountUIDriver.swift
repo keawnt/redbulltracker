@@ -48,9 +48,16 @@ final class CanCountUIDriver: XCTestCase {
                 }
             }
             shot("00c-onboarding-callsign")
+            // Configured backend: SIWA button + "Count solo for now".
+            // Unconfigured: the classic "Start counting". Take whichever.
             let start = app.buttons["Start counting"]
-            XCTAssertTrue(wait(start, 4), "Onboarding should end with Start counting")
-            start.tap()
+            let solo = app.buttons["Count solo for now"]
+            if wait(start, 3) {
+                start.tap()
+            } else {
+                XCTAssertTrue(wait(solo, 4), "Onboarding should end with a way in")
+                solo.tap()
+            }
         }
 
         // ── 1. Home, empty state ──────────────────────────────────────────

@@ -18,10 +18,9 @@ nonisolated enum SupabaseConfig {
     /// CanCount's dedicated Supabase project.
     static let url = URL(string: "https://fyaawzwvaccwywmlztqp.supabase.co")!
 
-    /// PLACEHOLDER — swap for the real publishable key. See header comment.
-    /// The publishable key is safe to ship in the binary; row-level security
+    /// The anon public key — safe to ship in the binary; row-level security
     /// on the server is what actually guards the data.
-    static let publishableKey = "SUPABASE_KEY_PLACEHOLDER"
+    static let publishableKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5YWF3end2YWNjd3l3bWx6dHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMTU1OTgsImV4cCI6MjA5ODc5MTU5OH0.Vy3OSU9fL3ds5VKzQHXAH7mn8viFK_rIUaz2YV51ZLg"
 
     /// The single switch the whole cloud layer hides behind. Flips true the
     /// moment a real key lands above — no other code changes required.
