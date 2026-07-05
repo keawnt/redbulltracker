@@ -495,8 +495,12 @@ final class ParallaxMotion {
         manager.deviceMotionUpdateInterval = 1.0 / 60.0
         manager.startDeviceMotionUpdates(to: .main) { @Sendable [weak self] deviceMotion, _ in
             guard let deviceMotion else { return }
+            // Pull the primitives out before the actor hop — CMDeviceMotion
+            // itself is not Sendable (Release-config strict-concurrency error).
+            let rawPitch = deviceMotion.attitude.pitch
+            let rawRoll = deviceMotion.attitude.roll
             MainActor.assumeIsolated {
-                self?.ingest(deviceMotion)
+                self?.ingest(pitch: rawPitch, roll: rawRoll)
             }
         }
         #endif
@@ -516,9 +520,7 @@ final class ParallaxMotion {
         roll = 0
     }
 
-    private func ingest(_ deviceMotion: CMDeviceMotion) {
-        let rawPitch = deviceMotion.attitude.pitch
-        let rawRoll = deviceMotion.attitude.roll
+    private func ingest(pitch rawPitch: Double, roll rawRoll: Double) {
         if referencePitch == nil {
             referencePitch = rawPitch
             referenceRoll = rawRoll
