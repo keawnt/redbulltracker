@@ -29,6 +29,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.keawn.cancount
+        CODE_SIGN_ENTITLEMENTS: CanCount/CanCount.entitlements
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         INFOPLIST_KEY_NSCameraUsageDescription: "CanCount uses the camera to scan Red Bull barcodes."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Store Radar nudges you to log a can when you're near a gas station, corner store, or grocery. Only if you turn it on."

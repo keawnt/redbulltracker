@@ -58,6 +58,7 @@
 		335180913B788F2DEE62C03B /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		46F3087BC271BFD5174989FD /* CanCountUIDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanCountUIDriver.swift; sourceTree = "<group>"; };
 		48AFA29A9D4DEBEC75BCDCAD /* StoreRadarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreRadarService.swift; sourceTree = "<group>"; };
+		4BE807032B7841D4FDBADE5D /* CanCount.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CanCount.entitlements; sourceTree = "<group>"; };
 		509A16E194D6053FC44EC75E /* OpenFoodFactsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoodFactsClient.swift; sourceTree = "<group>"; };
 		525CD6DB78938739F8B01F07 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		5A42B2396FF7DC9185587744 /* LineupLoyaltySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineupLoyaltySection.swift; sourceTree = "<group>"; };
@@ -188,6 +189,7 @@
 		98323C5836C6FE6ECB1964EA /* CanCount */ = {
 			isa = PBXGroup;
 			children = (
+				4BE807032B7841D4FDBADE5D /* CanCount.entitlements */,
 				5C500B1FDC6411859EB674F5 /* App */,
 				5CD01D96DC8EA9CF59146BFD /* Models */,
 				2619AD3C453D3724986FE3C4 /* Resources */,
@@ -496,6 +498,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CanCount/CanCount.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -524,6 +527,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CanCount/CanCount.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
