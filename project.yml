@@ -7,10 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    # Set your Apple Developer Team ID once:  export CANCOUNT_TEAM_ID=ABCDE12345
-    # then re-run `xcodegen generate` (or just pick the Team in Xcode's
-    # Signing & Capabilities tab — Xcode remembers it per-machine).
-    DEVELOPMENT_TEAM: ${CANCOUNT_TEAM_ID}
+    DEVELOPMENT_TEAM: 6R67XBJ349   # Keawn Tandon (Apple Developer Program)
     CODE_SIGN_STYLE: Automatic
 schemes:
   CanCount:
