@@ -5,10 +5,9 @@ import Foundation
 /// Connection coordinates for CanCount's dedicated Supabase project.
 ///
 /// ============================================================
-/// SWAP POINT — BOTH VALUES BELOW ARE PLACEHOLDERS.
-/// When the dedicated Supabase project exists, replace `url` with
-/// the real project URL (https://<project-ref>.supabase.co) and
-/// `publishableKey` with that project's publishable (anon) key.
+/// SWAP POINT — the KEY below is still a PLACEHOLDER.
+/// Paste the project's anon/publishable key (Dashboard →
+/// Settings → API Keys) to light up every cloud feature.
 /// ============================================================
 ///
 /// Until then `isConfigured` reads false and every cloud feature in the
@@ -16,8 +15,8 @@ import Foundation
 /// The solo path neither knows nor cares that this file exists.
 nonisolated enum SupabaseConfig {
 
-    /// PLACEHOLDER — swap for the real project URL. See header comment.
-    static let url = URL(string: "https://CANCOUNT-PROJECT-REF.supabase.co")!
+    /// CanCount's dedicated Supabase project.
+    static let url = URL(string: "https://fyaawzwvaccwywmlztqp.supabase.co")!
 
     /// PLACEHOLDER — swap for the real publishable key. See header comment.
     /// The publishable key is safe to ship in the binary; row-level security
