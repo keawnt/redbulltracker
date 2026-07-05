@@ -17,6 +17,7 @@
 		32140CE081C1435548D13D5C /* OpenFoodFactsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 509A16E194D6053FC44EC75E /* OpenFoodFactsClient.swift */; };
 		3B6264EDE1908A3A002B7F61 /* ManualLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB7FD4F6087BAD451935EA63 /* ManualLogSheet.swift */; };
 		42DC73C3308FDF548DE643C6 /* Badges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9974FA63255E56F13FD197D8 /* Badges.swift */; };
+		46551E9B28E522D761214444 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0184A47F04BA29FBF735088 /* OnboardingView.swift */; };
 		474EA312B6559B949B08DEC0 /* CanArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A37FCC86A091B406065797F /* CanArtwork.swift */; };
 		49755630753767102AE10D07 /* LineupLoyaltySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A42B2396FF7DC9185587744 /* LineupLoyaltySection.swift */; };
 		56575309268E1FC921E4418F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E26DC6AE3925FBFBD103542F /* Assets.xcassets */; };
@@ -69,6 +70,7 @@
 		998C613BEBCA01B65AD4A0AC /* CelebrationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationOverlay.swift; sourceTree = "<group>"; };
 		9A37FCC86A091B406065797F /* CanArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanArtwork.swift; sourceTree = "<group>"; };
 		A69795498A31333C70636952 /* ConfettiBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiBurst.swift; sourceTree = "<group>"; };
+		B0184A47F04BA29FBF735088 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B0E986C405D2A429789FEC08 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		B1C2DAB16377915FBCDE9632 /* DataScannerRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataScannerRepresentable.swift; sourceTree = "<group>"; };
 		B5E499B3C6BE6AC0A69BA427 /* CanCountUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CanCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -166,6 +168,7 @@
 				F8E5F246FDEFA59993D62A73 /* Components */,
 				3D0CD56A400ACD3F1F9820AE /* Home */,
 				3C8FA4FD7C889ABD5C8C0E76 /* Leaderboard */,
+				EE20FD6F4899360E6D5F6E5E /* Onboarding */,
 				2FF366D4C2AE9CBF942E4B1C /* Profile */,
 				DF03F776AAF0EFD07BE4175E /* Scanner */,
 				CFFC9A8426990FC7FD466C57 /* Stats */,
@@ -221,6 +224,14 @@
 				BB4FE8442260165A593C7DCB /* ScannerSheet.swift */,
 			);
 			path = Scanner;
+			sourceTree = "<group>";
+		};
+		EE20FD6F4899360E6D5F6E5E /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B0184A47F04BA29FBF735088 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		F8E5F246FDEFA59993D62A73 /* Components */ = {
@@ -292,11 +303,11 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					6E175E84FA9EEDF558B9574F = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = "${CANCOUNT_TEAM_ID}";
 						ProvisioningStyle = Automatic;
 					};
 					8A1843CA6B25D167FF69B556 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = "${CANCOUNT_TEAM_ID}";
 						ProvisioningStyle = Automatic;
 						TestTargetID = 6E175E84FA9EEDF558B9574F;
 					};
@@ -362,6 +373,7 @@
 				C20ED568DE6AD6260D54EAD4 /* LogPipeline.swift in Sources */,
 				3B6264EDE1908A3A002B7F61 /* ManualLogSheet.swift in Sources */,
 				8C7B8BC7376BBF19C5D2A99B /* Models.swift in Sources */,
+				46551E9B28E522D761214444 /* OnboardingView.swift in Sources */,
 				32140CE081C1435548D13D5C /* OpenFoodFactsClient.swift in Sources */,
 				2A32E53B62DB9E61806ECEC4 /* ProfileView.swift in Sources */,
 				E868DD9D3946C7989EEFD62F /* RecapCard.swift in Sources */,
@@ -424,7 +436,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "${CANCOUNT_TEAM_ID}";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -487,6 +499,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "CanCount uses the camera to scan Red Bull barcodes.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always access lets Store Radar notice stores even when the app is closed. It never tracks where you've been — just whether a Red Bull is nearby.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Store Radar nudges you to log a can when you're near a gas station, corner store, or grocery. Only if you turn it on.";
@@ -514,6 +527,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "CanCount uses the camera to scan Red Bull barcodes.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always access lets Store Radar notice stores even when the app is closed. It never tracks where you've been — just whether a Red Bull is nearby.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Store Radar nudges you to log a can when you're near a gas station, corner store, or grocery. Only if you turn it on.";
@@ -570,7 +584,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "${CANCOUNT_TEAM_ID}";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;

@@ -24,6 +24,35 @@ final class CanCountUIDriver: XCTestCase {
     }
 
     func testFullWalkthrough() throws {
+        // ── 0. Onboarding (first launch only) ─────────────────────────────
+        let continueButton = app.buttons["Continue"]
+        if continueButton.waitForExistence(timeout: 5) {
+            sleep(1)
+            shot("00-onboarding-pitch")
+            continueButton.tap()
+            sleep(1)
+            shot("00b-onboarding-numbers")
+            continueButton.tap()
+            sleep(1)
+            continueButton.tap()
+            sleep(1)
+            let nameField = app.textFields["Display name"]
+            if nameField.waitForExistence(timeout: 3) {
+                nameField.tap()
+                nameField.typeText("Keawn")
+                // Dismiss the keyboard so the start button is hittable
+                if app.keyboards.buttons["done"].exists {
+                    app.keyboards.buttons["done"].tap()
+                } else if app.keyboards.buttons["Done"].exists {
+                    app.keyboards.buttons["Done"].tap()
+                }
+            }
+            shot("00c-onboarding-callsign")
+            let start = app.buttons["Start counting"]
+            XCTAssertTrue(wait(start, 4), "Onboarding should end with Start counting")
+            start.tap()
+        }
+
         // ── 1. Home, empty state ──────────────────────────────────────────
         XCTAssertTrue(wait(app.buttons["Scan a can"]), "Home should show the scan button")
         sleep(2) // let count-up + cascade animations settle

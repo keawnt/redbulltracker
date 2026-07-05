@@ -7,7 +7,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    DEVELOPMENT_TEAM: ""
+    # Set your Apple Developer Team ID once:  export CANCOUNT_TEAM_ID=ABCDE12345
+    # then re-run `xcodegen generate` (or just pick the Team in Xcode's
+    # Signing & Capabilities tab — Xcode remembers it per-machine).
+    DEVELOPMENT_TEAM: ${CANCOUNT_TEAM_ID}
     CODE_SIGN_STYLE: Automatic
 schemes:
   CanCount:
@@ -34,6 +37,9 @@ targets:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Store Radar nudges you to log a can when you're near a gas station, corner store, or grocery. Only if you turn it on."
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "Always access lets Store Radar notice stores even when the app is closed. It never tracks where you've been — just whether a Red Bull is nearby."
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        # No custom crypto — answers App Store Connect's export-compliance
+        # question automatically so every TestFlight build goes straight out.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_STRICT_CONCURRENCY: complete

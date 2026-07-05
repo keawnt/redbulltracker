@@ -26,10 +26,22 @@ struct CanCountApp: App {
         StoreRadarService.shared.resumeIfEnabled()
     }
 
+    @AppStorage("hasOnboarded") private var hasOnboarded = false
+
     var body: some Scene {
         WindowGroup {
-            RootTabView()
-                .preferredColorScheme(.dark)
+            Group {
+                if hasOnboarded {
+                    RootTabView()
+                } else {
+                    OnboardingView {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            hasOnboarded = true
+                        }
+                    }
+                }
+            }
+            .preferredColorScheme(.dark)
         }
         .modelContainer(container)
     }

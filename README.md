@@ -38,3 +38,15 @@ CanCount/
 ## Design
 
 Design direction and mockups live in `CANCOUNT_BUILD_HANDOFF.md` and `CanCount screen mockups.zip` — GO Club DNA on Liquid Glass, near-black canvas, energy-yellow accent, massive rounded numerals, and a floating can as the hero object.
+
+## TestFlight
+
+One-time setup: enroll in the [Apple Developer Program](https://developer.apple.com/programs/) ($99/yr), create the app record in App Store Connect (bundle id `com.keawn.cancount`), sign in to Xcode with your Apple ID, and set your Team (Xcode → Signing & Capabilities, or `export CANCOUNT_TEAM_ID=XXXXXXXXXX && xcodegen generate`).
+
+Then every build is:
+
+```sh
+./scripts/testflight.sh
+```
+
+Wait ~10 minutes for processing, then invite testers from App Store Connect → TestFlight. Note: the app targets iOS 26, so testers need current iPhones.
