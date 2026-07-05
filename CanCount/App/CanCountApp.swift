@@ -24,6 +24,10 @@ struct CanCountApp: App {
         UNUserNotificationCenter.current().delegate = NotificationRouter.shared
         StoreRadarService.registerNotificationCategory()
         StoreRadarService.shared.resumeIfEnabled()
+
+        // Supabase session restore is fire-and-forget: launch never waits on
+        // the network, and with the placeholder config it returns immediately.
+        Task { await SupabaseAuth.shared.restoreSession() }
     }
 
     @AppStorage("hasOnboarded") private var hasOnboarded = false

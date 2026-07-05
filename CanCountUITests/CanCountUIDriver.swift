@@ -75,16 +75,16 @@ final class CanCountUIDriver: XCTestCase {
         shot("03-scan-result-card")
         confirm.tap()
 
-        // Can Drop celebration (reduced-motion layout under test settings)
+        // Can Drop celebration (reduced-motion layout under test settings).
+        // It auto-finishes after ~3.5s under Reduce Motion — never tap it,
+        // tapping races the auto-dismiss and flakes.
         let keepCold = app.buttons.containing(
             NSPredicate(format: "label CONTAINS[c] 'keep it cold'")
         ).firstMatch
         XCTAssertTrue(wait(keepCold, 6), "Celebration should play after confirm")
-        sleep(1)
         shot("03b-celebration-scan")
-        if keepCold.exists { keepCold.tap() }
 
-        XCTAssertTrue(wait(app.buttons["Scan a can"], 10), "Should morph back to Home after celebration")
+        XCTAssertTrue(wait(app.buttons["Scan a can"], 15), "Should morph back to Home after celebration")
         sleep(2)
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "label == '1 cans this week'")).firstMatch.exists,
@@ -110,17 +110,16 @@ final class CanCountUIDriver: XCTestCase {
         shot("06-manual-log-size")
         logIt.tap()
 
-        // Manual path celebration plays at the root after the sheet dismisses
+        // Manual path celebration plays at the root after the sheet dismisses.
+        // Same rule: screenshot it, let it auto-finish, never tap.
         let keepColdManual = app.buttons.containing(
             NSPredicate(format: "label CONTAINS[c] 'keep it cold'")
         ).firstMatch
         if wait(keepColdManual, 6) {
-            sleep(1)
             shot("06b-celebration-manual")
-            if keepColdManual.exists { keepColdManual.tap() }
         }
 
-        XCTAssertTrue(wait(app.buttons["Scan a can"], 10), "Manual sheet should dismiss back to Home")
+        XCTAssertTrue(wait(app.buttons["Scan a can"], 15), "Manual sheet should dismiss back to Home")
         sleep(2)
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "label == '2 cans this week'")).firstMatch.exists,

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AuthenticationServices
 
 /// Profile tab — the operator's card.
 /// Squircle avatar, editable callsign, the badge wall, and the very few
@@ -314,6 +315,13 @@ struct ProfileView: View {
                             .background(.white.opacity(0.06), in: .capsule)
                     }
                     .accessibilityElement(children: .combine)
+
+                    // Account — only exists when a real Supabase project is
+                    // configured; the placeholder key renders none of this.
+                    if SupabaseConfig.isConfigured {
+                        settingsDivider
+                        accountRow(for: profile)
+                    }
                 }
                 .padding(16)
             }
@@ -325,6 +333,50 @@ struct ProfileView: View {
                 Haptics.tick()
                 try? modelContext.save()
             }
+        }
+    }
+
+    /// The ACCOUNT row: sign in with Apple when signed out, name + a quiet
+    /// sign-out when signed in. Callers gate on SupabaseConfig.isConfigured.
+    @ViewBuilder
+    private func accountRow(for profile: UserProfile) -> some View {
+        HStack(spacing: 14) {
+            settingIcon("person.crop.circle.fill", tint: Theme.racingBlue)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Account")
+                    .font(Theme.label(14))
+                    .foregroundStyle(.white)
+                Text(
+                    SupabaseAuth.shared.isSignedIn
+                        ? "Signed in as \(SupabaseAuth.shared.accountName ?? profile.displayName)"
+                        : "Crews sync between phones once you sign in."
+                )
+                .font(Theme.label(11))
+                .foregroundStyle(.white.opacity(0.45))
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            if SupabaseAuth.shared.isSignedIn {
+                Button {
+                    Haptics.tick()
+                    Task { await SupabaseAuth.shared.signOut() }
+                } label: {
+                    Text("Sign out")
+                        .font(Theme.label(12))
+                        .foregroundStyle(Theme.bullRed)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        if !SupabaseAuth.shared.isSignedIn {
+            SignInWithAppleButton(.signIn) { request in
+                SupabaseAuth.shared.configure(request: request)
+            } onCompletion: { result in
+                Task { try? await SupabaseAuth.shared.completeSignIn(with: result) }
+            }
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 44)
+            .clipShape(.capsule)
         }
     }
 

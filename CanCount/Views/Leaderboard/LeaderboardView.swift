@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import Combine
 import Foundation
+import AuthenticationServices
 
 // MARK: - LeaderboardView
 
@@ -16,16 +17,16 @@ struct LeaderboardView: View {
     @State private var entries: [LeaderboardEntry] = []
     @State private var selectedFriend: LeaderboardEntry?
     @State private var showingJoinSheet = false
+    @State private var showingFindFriends = false
     @State private var weekAnchor: Date = .now
+    @State private var toast: String?
 
     @Namespace private var podiumNamespace
 
-    // CloudKit swap point:
-    // Replace MockLeaderboardService with a CloudKitLeaderboardService that reads
-    // crew members' weekly counts out of a shared CKRecord zone keyed by inviteCode.
-    // This view only ever talks to the LeaderboardService protocol, so the swap
-    // touches exactly one line.
-    private let service: any LeaderboardService = MockLeaderboardService()
+    // CloudLeaderboardService reads real standings from Supabase when a crew
+    // has a serverID and you're signed in — and self-falls-back to the mock
+    // crew otherwise, so the local-only experience is byte-for-byte the same.
+    private let service: any LeaderboardService = CloudLeaderboardService()
 
     init() {}
 
@@ -105,9 +106,39 @@ struct LeaderboardView: View {
             LBFriendDetailSheet(entry: friend)
         }
         .sheet(isPresented: $showingJoinSheet) {
-            LBJoinCrewSheet()
+            LBJoinCrewSheet { message in
+                showToast(message)
+            }
+        }
+        .sheet(isPresented: $showingFindFriends) {
+            FindFriendsSheet()
+        }
+        .overlay(alignment: .bottom) {
+            if let toast {
+                Text(toast)
+                    .font(Theme.label(12))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.bottom, 110) // clear the floating scan button
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
         }
         .sensoryFeedback(.impact(weight: .light), trigger: entries)
+    }
+
+    /// One-line glass toast at the bottom; clears itself unless a newer
+    /// message has already taken the slot.
+    private func showToast(_ message: String) {
+        withAnimation(motion) { toast = message }
+        Task {
+            try? await Task.sleep(for: .seconds(3))
+            if toast == message {
+                withAnimation(motion) { toast = nil }
+            }
+        }
     }
 
     // MARK: Crew content
@@ -153,6 +184,17 @@ struct LeaderboardView: View {
                 }
                 .buttonStyle(.glass)
                 .accessibilityLabel("Share invite code")
+                if SupabaseConfig.isConfigured && SupabaseAuth.shared.isSignedIn {
+                    Button {
+                        Haptics.tick()
+                        showingFindFriends = true
+                    } label: {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .buttonStyle(.glass)
+                    .accessibilityLabel("Find friends")
+                }
             }
         }
     }
@@ -287,6 +329,11 @@ struct LeaderboardView: View {
             Text("Assemble the crew. Establish dominance.")
                 .font(Theme.label(14))
                 .foregroundStyle(.white.opacity(0.5))
+            if SupabaseConfig.isConfigured && !SupabaseAuth.shared.isSignedIn {
+                signInCard
+                    .padding(.top, 4)
+                    .padding(.horizontal, 8)
+            }
             VStack(spacing: 12) {
                 Button {
                     createCrew()
@@ -317,13 +364,55 @@ struct LeaderboardView: View {
         .padding(.horizontal, 24)
     }
 
-    // Sign in with Apple + CloudKit swap point:
-    // v1 crews are local-only — no accounts, no server. The real version
-    // authenticates with SIWA, creates a shared CloudKit zone keyed by the
-    // invite code, and CKShares it to friends. The Crew model and this view
-    // keep exactly this shape; only the plumbing behind createCrew/join changes.
+    /// Signed-out pitch shown only when a real Supabase project is configured
+    /// — with the placeholder key this card never exists.
+    private var signInCard: some View {
+        GlassCard(radius: 22) {
+            VStack(alignment: .leading, spacing: 10) {
+                MicroLabel(text: "REAL RIVALS")
+                Text("Crews sync between phones once you sign in.")
+                    .font(Theme.label(13))
+                    .foregroundStyle(.white.opacity(0.7))
+                SignInWithAppleButton(.signIn) { request in
+                    SupabaseAuth.shared.configure(request: request)
+                } onCompletion: { result in
+                    Task { try? await SupabaseAuth.shared.completeSignIn(with: result) }
+                }
+                .signInWithAppleButtonStyle(.white)
+                .frame(height: 48)
+                .clipShape(.capsule)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Signed in against a live Supabase project → the crew is minted
+    /// server-side (server invite code, serverID on the local row).
+    /// Anything else — placeholder config, signed out, or the cloud flaking —
+    /// lands on exactly the classic local-only crew.
     private func createCrew() {
-        let crew = Crew(name: "THE PIT CREW", inviteCode: Self.makeInviteCode())
+        let name = "THE PIT CREW"
+        guard SupabaseConfig.isConfigured, SupabaseAuth.shared.isSignedIn else {
+            insertLocalCrew(name: name, code: Self.makeInviteCode())
+            return
+        }
+        Task {
+            do {
+                let created = try await CloudLeaderboardService().createCrew(name: name)
+                let crew = Crew(name: name, inviteCode: created.inviteCode)
+                crew.serverID = created.serverID
+                modelContext.insert(crew)
+                try? modelContext.save()
+                Haptics.success()
+            } catch {
+                insertLocalCrew(name: name, code: Self.makeInviteCode())
+                showToast("Cloud flaked. Crew is local for now.")
+            }
+        }
+    }
+
+    private func insertLocalCrew(name: String, code: String) {
+        let crew = Crew(name: name, inviteCode: code)
         modelContext.insert(crew)
         try? modelContext.save()
         Haptics.success()
@@ -659,13 +748,18 @@ private struct LBFriendDetailSheet: View {
     }
 }
 
-// MARK: - Join sheet (local stub)
+// MARK: - Join sheet
 
 private struct LBJoinCrewSheet: View {
+    /// Surfaces a one-line toast on the leaderboard after the sheet closes
+    /// (used when the cloud join flakes and we fall back to a local crew).
+    var onToast: (String) -> Void = { _ in }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
     @State private var code = ""
+    @State private var joining = false
 
     /// Only glyphs a real code can contain — same set `makeInviteCode` mints.
     private static let allowedGlyphs = Set(LeaderboardView.inviteAlphabet)
@@ -708,7 +802,7 @@ private struct LBJoinCrewSheet: View {
                 .buttonStyle(.glassProminent)
                 .tint(Theme.energyYellow)
                 .foregroundStyle(.black)
-                .disabled(code.count != 6)
+                .disabled(code.count != 6 || joining)
             }
             .padding(28)
         }
@@ -717,14 +811,39 @@ private struct LBJoinCrewSheet: View {
         .presentationBackground(Theme.canvas)
     }
 
-    // Local stub. Real version: SIWA identifies the user, the invite code looks
-    // up the crew's shared CloudKit zone, and we accept the CKShare — which also
-    // returns the crew's real name instead of the default.
+    /// Signed in against a live Supabase project → the code resolves
+    /// server-side and comes back with the crew's real name + serverID.
+    /// Anything else — placeholder config, signed out, or the cloud flaking —
+    /// lands on exactly the classic local-only join.
     private func join() {
+        let entered = code
+        guard SupabaseConfig.isConfigured, SupabaseAuth.shared.isSignedIn else {
+            joinLocally(code: entered)
+            dismiss()
+            return
+        }
+        joining = true
+        Task {
+            do {
+                let joined = try await CloudLeaderboardService().joinCrew(code: entered)
+                let crew = Crew(name: joined.name, inviteCode: entered)
+                crew.serverID = joined.serverID
+                modelContext.insert(crew)
+                try? modelContext.save()
+                Haptics.success()
+            } catch {
+                joinLocally(code: entered)
+                onToast("Cloud flaked. Crew is local for now.")
+            }
+            joining = false
+            dismiss()
+        }
+    }
+
+    private func joinLocally(code: String) {
         let crew = Crew(name: "THE PIT CREW", inviteCode: code)
         modelContext.insert(crew)
         try? modelContext.save()
         Haptics.success()
-        dismiss()
     }
 }

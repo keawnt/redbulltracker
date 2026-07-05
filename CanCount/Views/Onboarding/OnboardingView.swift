@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import AuthenticationServices
 
 // MARK: - OnboardingView
 
@@ -9,10 +10,11 @@ import UserNotifications
 ///
 /// Pages: value pitch (can) → the numbers → the crew → callsign + primers.
 ///
-/// SIGN IN WITH APPLE SLOT: when the backend lands (Supabase or CloudKit),
-/// the "START COUNTING" button on the last page becomes SignInWithAppleButton
-/// (AuthenticationServices) with a "count solo for now" escape hatch below it
-/// — the app never requires an account to log cans (handoff non-negotiable).
+/// SIGN IN WITH APPLE: when a real Supabase project is configured, the last
+/// page leads with SignInWithAppleButton and a "Count solo for now" escape
+/// hatch below it — the app never requires an account to log cans (handoff
+/// non-negotiable). With the placeholder config the page is exactly the
+/// classic "START COUNTING" button, untouched.
 struct OnboardingView: View {
     /// Flipped when the user finishes; the app root swaps to RootTabView.
     let onFinished: () -> Void
@@ -206,6 +208,30 @@ struct OnboardingView: View {
                         .foregroundStyle(.white.opacity(0.4))
                 }
                 .buttonStyle(.plain)
+            } else if SupabaseConfig.isConfigured && !SupabaseAuth.shared.isSignedIn {
+                // Backend is live and nobody's signed in: Apple first,
+                // solo escape hatch right below. Signing in also finishes
+                // onboarding — one tap, no ceremony.
+                SignInWithAppleButton(.signIn) { request in
+                    SupabaseAuth.shared.configure(request: request)
+                } onCompletion: { result in
+                    Task {
+                        try? await SupabaseAuth.shared.completeSignIn(with: result)
+                        finish()
+                    }
+                }
+                .signInWithAppleButtonStyle(.white)
+                .frame(height: 52)
+                .clipShape(.capsule)
+
+                Button {
+                    finish()
+                } label: {
+                    Text("Count solo for now")
+                        .font(Theme.label(12))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                .buttonStyle(.plain)
             } else {
                 Button {
                     finish()
@@ -220,8 +246,6 @@ struct OnboardingView: View {
                 .buttonStyle(.glassProminent)
                 .tint(Theme.energyYellow)
                 .accessibilityLabel("Start counting")
-                // ^ SIWA SLOT: replace with SignInWithAppleButton + a
-                //   "count solo for now" plain button when the backend lands.
             }
         }
     }

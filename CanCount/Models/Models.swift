@@ -112,6 +112,9 @@ final class Crew {
     var name: String
     var inviteCode: String
     var memberNames: [String]
+    /// Supabase `crews.id` once this crew exists server-side.
+    /// nil = local-only (solo mode, or created before sign-in).
+    var serverID: UUID? = nil
 
     init(name: String, inviteCode: String, memberNames: [String] = []) {
         self.id = UUID()
