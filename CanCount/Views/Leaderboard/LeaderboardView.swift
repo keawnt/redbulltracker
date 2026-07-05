@@ -35,6 +35,28 @@ struct LeaderboardView: View {
         StatsEngine.weekCount(logs, weekOf: weekAnchor)
     }
 
+    /// Your count for the week before this one — 7 days behind the same
+    /// `startOfWeek` anchor, so both weeks live on the same calendar.
+    private var myLastWeekCount: Int {
+        let thisWeekStart = StatsEngine.startOfWeek(containing: weekAnchor)
+        let lastWeek = Calendar.current.date(byAdding: .day, value: -7, to: thisWeekStart)
+            ?? thisWeekStart.addingTimeInterval(-604_800)
+        return StatsEngine.weekCount(logs, weekOf: lastWeek)
+    }
+
+    /// Last week's champion keeps the crown all week, wherever they now stand.
+    /// Last week's count is reconstructed as `weeklyCount - lastWeekDelta`;
+    /// ties break alphabetically, and nobody reigns over an empty week.
+    private var reigningChampionID: UUID? {
+        let champion = entries.max { lhs, rhs in
+            let l = lhs.weeklyCount - lhs.lastWeekDelta
+            let r = rhs.weeklyCount - rhs.lastWeekDelta
+            return l != r ? l < r : lhs.name > rhs.name
+        }
+        guard let champion, champion.weeklyCount - champion.lastWeekDelta > 0 else { return nil }
+        return champion.id
+    }
+
     /// Reduce Motion: springs become gentle crossfade-ish eases.
     private var motion: Animation {
         reduceMotion ? .easeInOut(duration: 0.25) : Theme.spring
@@ -44,6 +66,7 @@ struct LeaderboardView: View {
         LBRefreshKey(
             weekStart: StatsEngine.startOfWeek(containing: weekAnchor),
             myCount: myWeeklyCount,
+            myLastCount: myLastWeekCount,
             crewID: crew?.id
         )
     }
@@ -59,13 +82,18 @@ struct LeaderboardView: View {
         }
         // Loads on appear, on week rollover, on crew creation, and whenever my count changes.
         .task(id: refreshKey) {
-            let loaded = await service.entries(crew: crew, myWeeklyCount: myWeeklyCount)
+            let loaded = await service.entries(
+                crew: crew,
+                myWeeklyCount: myWeeklyCount,
+                myLastWeekCount: myLastWeekCount
+            )
             withAnimation(motion) {
                 entries = loaded
             }
         }
         // Week-change detection: day-change notifications re-anchor the week; the
-        // refreshKey's weekStart only actually changes when Sunday midnight hits.
+        // refreshKey's weekStart only actually changes when the calendar's week
+        // rolls over (Sunday midnight in the US, Monday most other places).
         .onReceive(
             NotificationCenter.default
                 .publisher(for: .NSCalendarDayChanged)
@@ -160,6 +188,7 @@ struct LeaderboardView: View {
                     LBPodiumColumn(
                         entry: slot.entry,
                         rank: slot.rank,
+                        isReigningChampion: slot.entry.id == reigningChampionID,
                         namespace: podiumNamespace,
                         reduceMotion: reduceMotion
                     )
@@ -188,14 +217,17 @@ struct LeaderboardView: View {
 
     @ViewBuilder
     private func row(entry: LeaderboardEntry, rank: Int) -> some View {
+        // The podium already crowns top-3 champions; the list crown only
+        // marks a reigning champion who has slipped out of the top three.
+        let crowned = entry.id == reigningChampionID && rank > 3
         if entry.isYou {
-            LBRankRow(entry: entry, rank: rank)
+            LBRankRow(entry: entry, rank: rank, isReigningChampion: crowned)
         } else {
             Button {
                 Haptics.tick()
                 selectedFriend = entry
             } label: {
-                LBRankRow(entry: entry, rank: rank)
+                LBRankRow(entry: entry, rank: rank, isReigningChampion: crowned)
             }
             .buttonStyle(.plain)
             .accessibilityHint("Shows their flavor breakdown")
@@ -217,9 +249,18 @@ struct LeaderboardView: View {
         return "\(chaser.name) is \(gap) can\(gap == 1 ? "" : "s") behind you. Stay ahead."
     }
 
+    /// Names the actual reset day from the user's calendar — "Sunday" in the
+    /// US, "Monday" most other places — so the footer never lies about it.
+    private var resetLine: String {
+        let calendar = Calendar.current
+        let symbols = calendar.weekdaySymbols
+        let index = min(max(calendar.firstWeekday - 1, 0), symbols.count - 1)
+        return "Resets \(symbols[index]) midnight"
+    }
+
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
-            MicroLabel(text: "RESETS SUNDAY MIDNIGHT")
+            MicroLabel(text: resetLine)
             if let line = chaseLine {
                 Text(line)
                     .font(Theme.label(13))
@@ -288,9 +329,14 @@ struct LeaderboardView: View {
         Haptics.success()
     }
 
-    /// 6 characters, no ambiguous glyphs (0/O, 1/I/L).
+    /// The one true code alphabet — no ambiguous glyphs (0/O, 1/I/L).
+    /// The join sheet filters input against this exact set, so the two
+    /// can never drift apart.
+    static let inviteAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+    /// 6 characters drawn from `inviteAlphabet`.
     static func makeInviteCode() -> String {
-        let alphabet = Array("ABCDEFGHJKMNPQRSTUVWXYZ23456789")
+        let alphabet = Array(inviteAlphabet)
         return String((0..<6).map { _ in alphabet.randomElement() ?? "B" })
     }
 }
@@ -300,6 +346,7 @@ struct LeaderboardView: View {
 private struct LBRefreshKey: Equatable {
     let weekStart: Date
     let myCount: Int
+    let myLastCount: Int
     let crewID: UUID?
 }
 
@@ -326,6 +373,7 @@ private enum LBColor {
 private struct LBPodiumColumn: View {
     let entry: LeaderboardEntry
     let rank: Int
+    let isReigningChampion: Bool
     let namespace: Namespace.ID
     let reduceMotion: Bool
 
@@ -349,7 +397,8 @@ private struct LBPodiumColumn: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            if rank == 1 {
+            // Last week's champion wears the crown all week — even from silver.
+            if isReigningChampion {
                 Text("👑")
                     .font(.system(size: 26))
                     .offset(y: crownFloats ? -4 : 3)
@@ -371,7 +420,10 @@ private struct LBPodiumColumn: View {
                 .font(Theme.heroFont(rank == 1 ? 34 : 26))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
-                .accessibilityLabel("\(entry.name), \(entry.weeklyCount) cans this week")
+                .accessibilityLabel(
+                    "\(entry.name), \(entry.weeklyCount) cans this week"
+                        + (isReigningChampion ? ", reigning champion" : "")
+                )
             Color.clear
                 .frame(height: pedestalHeight)
                 .glassEffect(.regular.tint(medal.opacity(0.35)), in: .rect(cornerRadius: 18))
@@ -398,6 +450,7 @@ private struct LBPodiumColumn: View {
 private struct LBRankRow: View {
     let entry: LeaderboardEntry
     let rank: Int
+    var isReigningChampion: Bool = false
 
     private var rankColor: Color {
         switch rank {
@@ -421,10 +474,18 @@ private struct LBRankRow: View {
                     ring: entry.isYou ? Theme.energyYellow : .white.opacity(0.18)
                 )
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.name)
-                        .font(Theme.label(15))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(entry.name)
+                            .font(Theme.label(15))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                        // Fell off the podium; kept the crown. Rules are rules.
+                        if isReigningChampion {
+                            Text("👑")
+                                .font(.system(size: 13))
+                                .accessibilityLabel("Reigning champion")
+                        }
+                    }
                     if entry.isYou {
                         MicroLabel(text: "THAT'S YOU")
                     }
@@ -606,6 +667,9 @@ private struct LBJoinCrewSheet: View {
 
     @State private var code = ""
 
+    /// Only glyphs a real code can contain — same set `makeInviteCode` mints.
+    private static let allowedGlyphs = Set(LeaderboardView.inviteAlphabet)
+
     var body: some View {
         ZStack {
             Theme.canvas.ignoresSafeArea()
@@ -623,7 +687,13 @@ private struct LBJoinCrewSheet: View {
                     .padding(.vertical, 14)
                     .glassEffect(.regular, in: .rect(cornerRadius: 18))
                     .onChange(of: code) { _, newValue in
-                        code = String(newValue.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(6))
+                        // Uppercase as you type; drop anything makeInviteCode
+                        // would never generate (0/O, 1/I/L, non-ASCII, emoji).
+                        code = String(
+                            newValue.uppercased()
+                                .filter { Self.allowedGlyphs.contains($0) }
+                                .prefix(6)
+                        )
                     }
                     .accessibilityLabel("Invite code")
                 Button {

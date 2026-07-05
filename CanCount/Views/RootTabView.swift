@@ -15,6 +15,7 @@ struct RootTabView: View {
     @State private var selection: AppTab = .home
     @State private var isScannerPresented = false
     @State private var scanTapCount = 0
+    @State private var celebrationCenter = CelebrationCenter.shared
     @Namespace private var glassNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -48,13 +49,53 @@ struct RootTabView: View {
             scanButton
                 .padding(.bottom, 76) // float clear of the glass tab bar
         }
+        .overlay {
+            // Manual-log path: the Can Drop celebration plays here at the
+            // root, over every tab, once the sheet has dismissed itself.
+            if let pending = celebrationCenter.pending {
+                CelebrationView(
+                    sku: pending.sku,
+                    result: pending.result,
+                    weekCount: pending.weekCount,
+                    todayCount: pending.todayCount,
+                    streak: pending.streak
+                ) {
+                    celebrationCenter.pending = nil
+                }
+                .transition(.opacity)
+                .zIndex(10)
+            }
+        }
         .fullScreenCover(isPresented: $isScannerPresented) {
             ScannerSheet()
+                .navigationTransition(.zoom(sourceID: "scanButton", in: glassNamespace))
         }
         .sensoryFeedback(.selection, trigger: selection)
         .sensoryFeedback(.impact(weight: .heavy), trigger: scanTapCount)
         .preferredColorScheme(.dark)
+        #if DEBUG
+        // `-celebrationDemo` launch arg: auto-play the Can Drop celebration
+        // 2s after launch so the full animation can be recorded headlessly.
+        .task {
+            guard ProcessInfo.processInfo.arguments.contains("-celebrationDemo") else { return }
+            try? await Task.sleep(for: .seconds(2))
+            let context = modelContext
+            let skus = (try? context.fetch(FetchDescriptor<SKU>())) ?? []
+            guard let sku = skus.first(where: { $0.canStyle == "acai" || $0.flavor.localizedCaseInsensitiveContains("açaí") }) ?? skus.first else { return }
+            let result = LogPipeline.log(sku: sku, source: .manual, context: context)
+            let logs = (try? context.fetch(FetchDescriptor<CanLog>())) ?? []
+            celebrationCenter.celebrate(
+                sku: sku,
+                result: result,
+                weekCount: StatsEngine.weekCount(logs, weekOf: .now),
+                todayCount: StatsEngine.todayCount(logs),
+                streak: StatsEngine.currentStreak(logs)
+            )
+        }
+        #endif
     }
+
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: Scan button
 
@@ -83,7 +124,10 @@ struct RootTabView: View {
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.tint(Theme.energyYellow.opacity(0.85)).interactive())
-            .glassEffectID("scanButton", in: glassNamespace)
+            // Real morph: the scanner cover zooms out of this button and
+            // melts back into it on dismiss. (glassEffectID can't morph
+            // across presentation contexts — this can.)
+            .matchedTransitionSource(id: "scanButton", in: glassNamespace)
         }
         .shadow(color: Theme.energyYellow.opacity(0.35), radius: 18, y: 6)
         // Morph-away while the scanner is up; spring back when it dismisses.

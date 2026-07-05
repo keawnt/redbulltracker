@@ -16,11 +16,17 @@ final class SKU {
     var accentHex: String
     var canStyle: String
     var verified: Bool
+    /// Which Red Bull family this can belongs to:
+    /// "original" | "sugarfree" | "zero" | "editions".
+    /// Defaults to "" so pre-lineup stores migrate cleanly; SeedLoader
+    /// backfills known barcodes on launch.
+    var lineup: String = ""
     @Relationship(deleteRule: .cascade, inverse: \CanLog.sku) var logs: [CanLog] = []
 
     init(barcode: String, name: String, flavor: String, sizeML: Int, sizeOZ: Double,
          caffeineMG: Int, sugarG: Double, calories: Int, sugarFree: Bool,
-         accentHex: String, canStyle: String, verified: Bool) {
+         accentHex: String, canStyle: String, verified: Bool,
+         lineup: String = "original") {
         self.barcode = barcode
         self.name = name
         self.flavor = flavor
@@ -33,9 +39,22 @@ final class SKU {
         self.accentHex = accentHex
         self.canStyle = canStyle
         self.verified = verified
+        self.lineup = lineup
     }
 
     var accent: Color { Color(hex: accentHex) }
+
+    /// Display name for the lineup family. Unrecognized (or not-yet-healed)
+    /// lineups read as "Original" — every can belongs somewhere.
+    var lineupLabel: String {
+        switch lineup {
+        case "sugarfree": "Sugarfree"
+        case "zero": "Zero"
+        case "editions": "Editions"
+        default: "Original"
+        }
+    }
+
     var sizeLabel: String {
         sizeOZ.truncatingRemainder(dividingBy: 1) == 0
             ? "\(Int(sizeOZ))oz" : String(format: "%.1foz", sizeOZ)

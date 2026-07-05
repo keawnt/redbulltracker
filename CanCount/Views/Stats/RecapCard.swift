@@ -24,7 +24,11 @@ struct RecapCard: View {
     private var dayStats: [DayStat] { StatsEngine.dailyStats(logs, weekOf: weekOf) }
 
     private var weekNumber: Int {
-        Calendar(identifier: .iso8601).component(.weekOfYear, from: weekOf)
+        // User-calendar week number, sampled mid-week — keeps the recap label
+        // in agreement with StatsView.isoWeekNumber and dodges the Sunday /
+        // ISO-Monday boundary (confirmed review finding).
+        let midWeek = Calendar.current.date(byAdding: .day, value: 3, to: weekOf) ?? weekOf
+        return Calendar.current.component(.weekOfYear, from: midWeek)
     }
 
     private var topFlavor: String {

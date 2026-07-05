@@ -16,13 +16,22 @@ struct ProfileView: View {
 
     init() {}
 
+    /// Streak derived live from the logs — the stored `profile.streakCount`
+    /// only updates when you log, so it happily overstates a dead streak.
+    /// The logs never lie.
+    private var dayStreak: Int {
+        StatsEngine.currentStreak(logs)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 if let profile {
                     header(for: profile)
                     statTrio(for: profile)
+                    LineupLoyaltySection(logs: logs)
                     badgeWall(for: profile)
+                    StoreRadarSection()
                     settings(for: profile)
                 }
                 footer
@@ -74,14 +83,14 @@ struct ProfileView: View {
 
                     HStack(spacing: 10) {
                         MicroLabel(text: "Joined \(profile.joinDate.formatted(.dateTime.month(.wide).year()))")
-                        if profile.streakCount > 0 {
-                            Text("🔥 \(profile.streakCount)")
+                        if dayStreak > 0 {
+                            Text("🔥 \(dayStreak)")
                                 .font(Theme.label(11))
                                 .foregroundStyle(Theme.energyYellow)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
                                 .background(.white.opacity(0.06), in: .capsule)
-                                .accessibilityLabel("\(profile.streakCount) day streak")
+                                .accessibilityLabel("\(dayStreak) day streak")
                         }
                     }
                 }
@@ -135,8 +144,8 @@ struct ProfileView: View {
         return HStack(spacing: 12) {
             StatPill(title: "Total cans", value: "\(logs.count)", accent: Theme.energyYellow, systemImage: "cylinder.fill")
                 .accessibilityLabel("\(logs.count) total cans logged")
-            StatPill(title: "Day streak", value: "\(profile.streakCount)", accent: Theme.bullRed, systemImage: "flame.fill")
-                .accessibilityLabel("\(profile.streakCount) day streak")
+            StatPill(title: "Day streak", value: "\(dayStreak)", accent: Theme.bullRed, systemImage: "flame.fill")
+                .accessibilityLabel("\(dayStreak) day streak")
             StatPill(title: "Badges", value: "\(earned)/\(total)", accent: Theme.racingBlue, systemImage: "medal.fill")
                 .accessibilityLabel("\(earned) of \(total) badges earned")
         }

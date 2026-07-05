@@ -227,24 +227,26 @@ struct ManualLogSheet: View {
     private func logIt(_ sku: SKU) {
         guard !didLog else { return }
         let result = LogPipeline.log(sku: sku, source: .manual, context: modelContext)
+
+        guard result.persisted else {
+            Haptics.warning()
+            celebrationLine = "That one didn't save. Try again."
+            return
+        }
+
         Haptics.success()
         didLog = true
 
-        if result.isPersonalRecord {
-            celebrationLine = Copy.newPR
-        } else if let badge = result.newBadges.first {
-            celebrationLine = "Badge unlocked: \(badge.title)"
-        } else {
-            celebrationLine = "Logged. Honor intact."
-        }
-
-        let celebrate = result.isPersonalRecord || !result.newBadges.isEmpty
-        if celebrate {
-            confettiTrigger += 1
-        }
-        Task {
-            try? await Task.sleep(for: .seconds(celebrate ? 1.6 : 0.45))
-            dismiss()
-        }
+        // The Can Drop celebration plays at the root, over everything, the
+        // moment this sheet is out of the way.
+        let allLogs = (try? modelContext.fetch(FetchDescriptor<CanLog>())) ?? []
+        CelebrationCenter.shared.celebrate(
+            sku: sku,
+            result: result,
+            weekCount: StatsEngine.weekCount(allLogs, weekOf: .now),
+            todayCount: StatsEngine.todayCount(allLogs),
+            streak: StatsEngine.currentStreak(allLogs)
+        )
+        dismiss()
     }
 }

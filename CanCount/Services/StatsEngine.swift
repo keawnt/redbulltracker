@@ -150,18 +150,85 @@ enum StatsEngine {
     // MARK: Personal records
 
     /// True when the week containing `date` has strictly more cans than
-    /// every prior week that has any logs.
+    /// every prior week — and there IS a prior week with logs. A brand-new
+    /// user's first week is never a "record"; records require a past to beat.
     static func isPersonalRecordWeek(_ logs: [CanLog], weekOf date: Date) -> Bool {
         let thisWeekStart = startOfWeek(containing: date)
+        let weekCounts = weeklyCounts(of: logs)
+        guard let thisCount = weekCounts[thisWeekStart], thisCount > 0 else { return false }
+        let prior = weekCounts.filter { $0.key < thisWeekStart }.values
+        guard let priorBest = prior.max(), priorBest > 0 else { return false }
+        return thisCount > priorBest
+    }
+
+    /// True ONLY at the crossing moment: a prior best exists and this week's
+    /// count just reached priorBest + 1. Use this to fire celebrations exactly
+    /// once instead of on every log of a record week.
+    static func becamePersonalRecord(_ logs: [CanLog], weekOf date: Date) -> Bool {
+        let thisWeekStart = startOfWeek(containing: date)
+        let weekCounts = weeklyCounts(of: logs)
+        guard let thisCount = weekCounts[thisWeekStart], thisCount > 0 else { return false }
+        let prior = weekCounts.filter { $0.key < thisWeekStart }.values
+        guard let priorBest = prior.max(), priorBest > 0 else { return false }
+        return thisCount == priorBest + 1
+    }
+
+    // MARK: Streak (live, from the logs — never trusts stored counters)
+
+    /// Consecutive calendar days with at least one log, counting the run that
+    /// ends today or yesterday (yesterday keeps a streak "alive" until the
+    /// day is actually missed). 0 when the last log is older than yesterday.
+    static func currentStreak(_ logs: [CanLog], asOf now: Date = .now) -> Int {
+        let calendar = Calendar.current
+        let days = Set(logs.map { calendar.startOfDay(for: $0.timestamp) })
+        guard !days.isEmpty else { return 0 }
+
+        let today = calendar.startOfDay(for: now)
+        var anchor: Date
+        if days.contains(today) {
+            anchor = today
+        } else if let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+                  days.contains(yesterday) {
+            anchor = yesterday
+        } else {
+            return 0
+        }
+
+        var streak = 0
+        while days.contains(anchor) {
+            streak += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: anchor) else { break }
+            anchor = previous
+        }
+        return streak
+    }
+
+    // MARK: Lineups
+
+    /// Breakdown of logs by Red Bull family (Original / Sugarfree / Zero /
+    /// Editions), reusing FlavorSlice with the lineup label in `flavor`.
+    static func lineupBreakdown(_ logs: [CanLog]) -> [FlavorSlice] {
+        let accents: [String: Color] = [
+            "Original": Theme.silver,
+            "Sugarfree": Theme.racingBlue,
+            "Zero": Color(hex: "#7C8794"),
+            "Editions": Theme.energyYellow,
+        ]
+        var counts: [String: Int] = [:]
+        for log in logs {
+            counts[log.sku?.lineupLabel ?? "Original", default: 0] += 1
+        }
+        return counts
+            .map { FlavorSlice(flavor: $0.key, count: $0.value, accent: accents[$0.key] ?? Theme.silver) }
+            .sorted { $0.count != $1.count ? $0.count > $1.count : $0.flavor < $1.flavor }
+    }
+
+    private static func weeklyCounts(of logs: [CanLog]) -> [Date: Int] {
         var weekCounts: [Date: Int] = [:]
         for log in logs {
             weekCounts[startOfWeek(containing: log.timestamp), default: 0] += 1
         }
-        guard let thisCount = weekCounts[thisWeekStart], thisCount > 0 else { return false }
         return weekCounts
-            .filter { $0.key < thisWeekStart }
-            .values
-            .allSatisfy { thisCount > $0 }
     }
 
     // MARK: Private helpers

@@ -46,6 +46,17 @@ struct StatsView: View {
         }
         .sensoryFeedback(.selection, trigger: selectedWeek)
         .sensoryFeedback(.impact(weight: .light), trigger: showCaffeine)
+        // Week rollover: if the user was looking at "this week" when the
+        // week flipped (midnight Sunday, or returning days later), follow
+        // them into the new week — otherwise a historical selection stays put.
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .NSCalendarDayChanged)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            reanchorWeekIfStale()
+        }
+        .onAppear { reanchorWeekIfStale() }
         .task(id: selectedWeek) {
             // Re-run the bar growth animation whenever the week changes
             // (and on first appear). The short sleep lets SwiftUI commit the
@@ -464,8 +475,26 @@ struct StatsView: View {
         "\(selectedWeek.timeIntervalSinceReferenceDate)-\(logs.count)"
     }
 
+    /// Tracks which week was "current" when the view last checked; used to
+    /// tell "user was on this week" apart from "user browsed history".
+    @State private var anchorWeek: Date = StatsEngine.startOfWeek(containing: .now)
+
+    private func reanchorWeekIfStale() {
+        let currentWeek = StatsEngine.startOfWeek(containing: .now)
+        guard currentWeek != anchorWeek else { return }
+        if selectedWeek == anchorWeek {
+            // They were watching the live week — carry them forward.
+            selectedWeek = currentWeek
+        }
+        anchorWeek = currentWeek
+    }
+
+    /// Week number by the USER'S calendar convention, sampled mid-week so a
+    /// Sunday-first week start never lands in the previous ISO week (the
+    /// confirmed off-by-one: ISO weekOfYear of a US Sunday is last week's).
     private func isoWeekNumber(of date: Date) -> Int {
-        Calendar(identifier: .iso8601).component(.weekOfYear, from: date)
+        let midWeek = Calendar.current.date(byAdding: .day, value: 3, to: date) ?? date
+        return Calendar.current.component(.weekOfYear, from: midWeek)
     }
 
     /// Renders the recap card to a shareable image at 3x scale.

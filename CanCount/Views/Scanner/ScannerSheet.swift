@@ -6,12 +6,15 @@ import UIKit
 
 // MARK: - Scan state machine
 
-/// .scanning -> .resolving(code) -> .found(SKU) / .rejected(name) -> confirm -> dismiss
+/// .scanning -> .resolving(code) -> .found(SKU) / .rejected(name) / .unavailable(code)
+/// -> confirm -> celebration -> dismiss
 enum ScanPhase: Equatable {
     case scanning
     case resolving(String)
     case found(SKU)
     case rejected(String?)
+    /// The lookup itself failed (offline, timeout, API hiccup) — never blame the can.
+    case unavailable(String)
 }
 
 /// Shared catalog helpers for the scan + manual-log flows.
@@ -60,11 +63,11 @@ struct ScannerSheet: View {
     @State private var phase: ScanPhase = .scanning
     @State private var selectedSKU: SKU?
     @State private var didLog = false
-    @State private var celebrationLine: String?
-    @State private var confettiTrigger = 0
+    @State private var saveErrorLine: String?
     @State private var showManualLog = false
     @State private var resolveTask: Task<Void, Never>?
     @State private var cameraAuth: ScanCameraAuthState = .undetermined
+    @State private var celebration: CelebrationCenter.PendingCelebration?
     @Namespace private var glassNamespace
 
     init() {}
@@ -74,8 +77,21 @@ struct ScannerSheet: View {
             Theme.canvas.ignoresSafeArea()
             scannerSurface
             overlayChrome
-            ConfettiBurst(trigger: confettiTrigger)
-                .ignoresSafeArea()
+
+            // The Can Drop celebration plays over the frozen camera, then
+            // dismisses the whole scanner on its way out.
+            if let celebration {
+                CelebrationView(
+                    sku: celebration.sku,
+                    result: celebration.result,
+                    weekCount: celebration.weekCount,
+                    todayCount: celebration.todayCount,
+                    streak: celebration.streak
+                ) {
+                    dismiss()
+                }
+                .transition(.opacity)
+            }
         }
         .task { await requestCameraAccess() }
         .onDisappear { resolveTask?.cancel() }
@@ -129,7 +145,10 @@ struct ScannerSheet: View {
     #endif
 
     private var isCameraActive: Bool {
-        phase == .scanning && !didLog
+        // Frozen while a result/celebration is up AND while the manual-log
+        // sheet covers the scanner — a barcode wandering past must not
+        // hijack state underneath it.
+        phase == .scanning && !didLog && !showManualLog && celebration == nil
     }
 
     private var showsHint: Bool {
@@ -198,6 +217,8 @@ struct ScannerSheet: View {
                     resultCard(for: sku)
                 case .rejected(let name):
                     rejectionCard(detectedName: name)
+                case .unavailable(let code):
+                    unavailableCard(code: code)
                 }
             }
             .transition(cardTransition)
@@ -252,9 +273,19 @@ struct ScannerSheet: View {
 
     private func resultCard(for sku: SKU) -> some View {
         let display = selectedSKU ?? sku
+        // One segment per size, verified SKUs winning any collision with an
+        // unverified Open-Food-Facts twin of the same flavor + size.
+        var seenSizes = Set<Int>()
         let sizeOptions = skus
             .filter { $0.flavor == display.flavor }
-            .sorted { $0.sizeML < $1.sizeML }
+            .sorted { a, b in
+                if a.sizeML != b.sizeML { return a.sizeML < b.sizeML }
+                let aIsDisplay = a.persistentModelID == display.persistentModelID
+                let bIsDisplay = b.persistentModelID == display.persistentModelID
+                if aIsDisplay != bIsDisplay { return aIsDisplay }
+                return a.verified && !b.verified
+            }
+            .filter { seenSizes.insert($0.sizeML).inserted }
 
         return VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -288,18 +319,14 @@ struct ScannerSheet: View {
                 ScanSizeSelector(options: sizeOptions, selection: sizeBinding)
             }
 
-            if didLog {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(Theme.energyYellow)
-                        .accessibilityHidden(true)
-                    Text(celebrationLine ?? "Logged. Hydrate accordingly.")
-                        .font(Theme.label(13))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            } else {
+            if let saveErrorLine {
+                Text(saveErrorLine)
+                    .font(Theme.label(12))
+                    .foregroundStyle(Theme.bullRed)
+                    .frame(maxWidth: .infinity)
+            }
+
+            if !didLog {
                 Button {
                     confirm()
                 } label: {
@@ -364,6 +391,60 @@ struct ScannerSheet: View {
         .glassEffectID("scan-card", in: glassNamespace)
     }
 
+    /// The lookup failed, not the can. Different card, different tone.
+    private func unavailableCard(code: String) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            MicroLabel(text: "LOOKUP FAILED")
+            Text("The internet flaked. Not the can's fault.")
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+            Text("Scan again when you're back online, or log it by hand.")
+                .font(Theme.label(12))
+                .foregroundStyle(.white.opacity(0.55))
+
+            HStack(spacing: 10) {
+                Button {
+                    Haptics.tick()
+                    phase = .resolving(code)
+                    resolveTask?.cancel()
+                    resolveTask = Task { await resolveUnknown(code) }
+                } label: {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                        .font(Theme.label(14))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.glassProminent)
+                .tint(Theme.energyYellow)
+
+                Button {
+                    Haptics.tick()
+                    showManualLog = true
+                } label: {
+                    Label("Log by hand", systemImage: "hand.tap")
+                        .font(Theme.label(14))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.glass)
+            }
+
+            Button {
+                Haptics.tick()
+                rescan()
+            } label: {
+                Label("Scan again", systemImage: "barcode.viewfinder")
+                    .font(Theme.label(13))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.white.opacity(0.5))
+        }
+        .padding(20)
+        .glassEffect(.regular.tint(Theme.racingBlue.opacity(0.18)), in: .rect(cornerRadius: Theme.cardRadius))
+        .glassEffectID("scan-card", in: glassNamespace)
+    }
+
     private func statBadge(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value)
@@ -413,16 +494,24 @@ struct ScannerSheet: View {
     }
 
     private func resolveUnknown(_ code: String) async {
-        let product = await OpenFoodFactsClient.fetch(barcode: code)
+        let lookup = await OpenFoodFactsClient.fetch(barcode: code)
         guard !Task.isCancelled, phase == .resolving(code) else { return }
-        if let product, product.isRedBull {
+        switch lookup {
+        case .found(let product) where product.isRedBull:
             let sku = OpenFoodFactsClient.makeSKU(from: product, context: modelContext)
             Haptics.thump()
             selectedSKU = sku
             phase = .found(sku)
-        } else {
+        case .found(let product):
             Haptics.warning()
-            phase = .rejected(product?.name)
+            phase = .rejected(product.name)
+        case .notFound:
+            Haptics.warning()
+            phase = .rejected(nil)
+        case .unavailable:
+            // Offline or the API flaked — never accuse the can.
+            Haptics.warning()
+            phase = .unavailable(code)
         }
     }
 
@@ -430,31 +519,34 @@ struct ScannerSheet: View {
         resolveTask?.cancel()
         selectedSKU = nil
         didLog = false
-        celebrationLine = nil
+        saveErrorLine = nil
         phase = .scanning
     }
 
     private func confirm() {
         guard let sku = selectedSKU, !didLog else { return }
         let result = LogPipeline.log(sku: sku, source: .scan, context: modelContext)
+
+        guard result.persisted else {
+            Haptics.warning()
+            saveErrorLine = "That one didn't save. Try again."
+            return
+        }
+
         Haptics.success()
         didLog = true
+        saveErrorLine = nil
 
-        if result.isPersonalRecord {
-            celebrationLine = Copy.newPR
-        } else if let badge = result.newBadges.first {
-            celebrationLine = "Badge unlocked: \(badge.title)"
-        } else {
-            celebrationLine = "Logged. Hydrate accordingly."
-        }
-
-        let celebrate = result.isPersonalRecord || !result.newBadges.isEmpty
-        if celebrate {
-            confettiTrigger += 1
-        }
-        Task {
-            try? await Task.sleep(for: .seconds(celebrate ? 1.6 : 0.45))
-            dismiss()
+        // Hand the numbers to the Can Drop celebration (post-log state).
+        let allLogs = (try? modelContext.fetch(FetchDescriptor<CanLog>())) ?? []
+        withAnimation(.easeIn(duration: 0.12)) {
+            celebration = CelebrationCenter.PendingCelebration(
+                sku: sku,
+                result: result,
+                weekCount: StatsEngine.weekCount(allLogs, weekOf: .now),
+                todayCount: StatsEngine.todayCount(allLogs),
+                streak: StatsEngine.currentStreak(allLogs)
+            )
         }
     }
 

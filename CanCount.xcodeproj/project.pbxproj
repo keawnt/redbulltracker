@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		092EBE124E7A0A43A9F492A6 /* ConfettiBurst.swift in Sources */ = {isa = PBXBuildFile; fileRef = A69795498A31333C70636952 /* ConfettiBurst.swift */; };
+		0E29E2561260F3CFBAF44768 /* CelebrationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 998C613BEBCA01B65AD4A0AC /* CelebrationOverlay.swift */; };
 		0F57388FA3FDA563F3757B6D /* LeaderboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CB0E36DD00AFEA08C3B888 /* LeaderboardService.swift */; };
 		109C933B5D657B968DCE9D56 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B07D3173DC287765D5E8069 /* StatsView.swift */; };
 		15206A668DBAD33EB4B0C953 /* StatsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF6CD89BC70945C7CC08D0D9 /* StatsEngine.swift */; };
@@ -17,7 +18,9 @@
 		3B6264EDE1908A3A002B7F61 /* ManualLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB7FD4F6087BAD451935EA63 /* ManualLogSheet.swift */; };
 		42DC73C3308FDF548DE643C6 /* Badges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9974FA63255E56F13FD197D8 /* Badges.swift */; };
 		474EA312B6559B949B08DEC0 /* CanArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A37FCC86A091B406065797F /* CanArtwork.swift */; };
+		49755630753767102AE10D07 /* LineupLoyaltySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A42B2396FF7DC9185587744 /* LineupLoyaltySection.swift */; };
 		56575309268E1FC921E4418F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E26DC6AE3925FBFBD103542F /* Assets.xcassets */; };
+		57F5BCF13E7E5AE09905E1C0 /* StoreRadarSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3B98CE2C11AC2128D84AC9B /* StoreRadarSection.swift */; };
 		6BF357D93524CBEAB144E974 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525CD6DB78938739F8B01F07 /* HomeView.swift */; };
 		750D7DA9B71017A3A24E5235 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C4844A7F760A99116D21A8 /* Theme.swift */; };
 		80259976E6567327494D87ED /* redbull_skus.json in Resources */ = {isa = PBXBuildFile; fileRef = BB4E13640151793C29EA5B90 /* redbull_skus.json */; };
@@ -32,6 +35,7 @@
 		C20ED568DE6AD6260D54EAD4 /* LogPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5100D105CDC0B43D79EA58E /* LogPipeline.swift */; };
 		D19B0584E25A11B89A653114 /* CanCountUIDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46F3087BC271BFD5174989FD /* CanCountUIDriver.swift */; };
 		DA058F0C68011DF110C67195 /* DataScannerRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2DAB16377915FBCDE9632 /* DataScannerRepresentable.swift */; };
+		E1DFA30B782CEECEF7EE3388 /* StoreRadarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AFA29A9D4DEBEC75BCDCAD /* StoreRadarService.swift */; };
 		E868DD9D3946C7989EEFD62F /* RecapCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CB24B3CB4828BD39F55D04 /* RecapCard.swift */; };
 /* End PBXBuildFile section */
 
@@ -52,14 +56,17 @@
 		31CB24B3CB4828BD39F55D04 /* RecapCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecapCard.swift; sourceTree = "<group>"; };
 		335180913B788F2DEE62C03B /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		46F3087BC271BFD5174989FD /* CanCountUIDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanCountUIDriver.swift; sourceTree = "<group>"; };
+		48AFA29A9D4DEBEC75BCDCAD /* StoreRadarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreRadarService.swift; sourceTree = "<group>"; };
 		509A16E194D6053FC44EC75E /* OpenFoodFactsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoodFactsClient.swift; sourceTree = "<group>"; };
 		525CD6DB78938739F8B01F07 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		5A42B2396FF7DC9185587744 /* LineupLoyaltySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineupLoyaltySection.swift; sourceTree = "<group>"; };
 		6A78B8CE7264A04D0F6D1C87 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		6F8836DCFB7A10516B51DED8 /* CanCount.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CanCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76AE26358FDA6987500471FE /* LeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
 		90CB0E36DD00AFEA08C3B888 /* LeaderboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardService.swift; sourceTree = "<group>"; };
 		93F5F5EBCE8096CC9153FE18 /* StatPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatPill.swift; sourceTree = "<group>"; };
 		9974FA63255E56F13FD197D8 /* Badges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Badges.swift; sourceTree = "<group>"; };
+		998C613BEBCA01B65AD4A0AC /* CelebrationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationOverlay.swift; sourceTree = "<group>"; };
 		9A37FCC86A091B406065797F /* CanArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanArtwork.swift; sourceTree = "<group>"; };
 		A69795498A31333C70636952 /* ConfettiBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiBurst.swift; sourceTree = "<group>"; };
 		B0E986C405D2A429789FEC08 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
@@ -67,6 +74,7 @@
 		B5E499B3C6BE6AC0A69BA427 /* CanCountUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CanCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB4E13640151793C29EA5B90 /* redbull_skus.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = redbull_skus.json; sourceTree = "<group>"; };
 		BB4FE8442260165A593C7DCB /* ScannerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerSheet.swift; sourceTree = "<group>"; };
+		C3B98CE2C11AC2128D84AC9B /* StoreRadarSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreRadarSection.swift; sourceTree = "<group>"; };
 		DF6CD89BC70945C7CC08D0D9 /* StatsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsEngine.swift; sourceTree = "<group>"; };
 		E26DC6AE3925FBFBD103542F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E5100D105CDC0B43D79EA58E /* LogPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogPipeline.swift; sourceTree = "<group>"; };
@@ -89,7 +97,9 @@
 		2FF366D4C2AE9CBF942E4B1C /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				5A42B2396FF7DC9185587744 /* LineupLoyaltySection.swift */,
 				335180913B788F2DEE62C03B /* ProfileView.swift */,
+				C3B98CE2C11AC2128D84AC9B /* StoreRadarSection.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -144,6 +154,7 @@
 				509A16E194D6053FC44EC75E /* OpenFoodFactsClient.swift */,
 				1975FC698C2335CED3E88C6C /* SeedLoader.swift */,
 				DF6CD89BC70945C7CC08D0D9 /* StatsEngine.swift */,
+				48AFA29A9D4DEBEC75BCDCAD /* StoreRadarService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -216,6 +227,7 @@
 			isa = PBXGroup;
 			children = (
 				9A37FCC86A091B406065797F /* CanArtwork.swift */,
+				998C613BEBCA01B65AD4A0AC /* CelebrationOverlay.swift */,
 				A69795498A31333C70636952 /* ConfettiBurst.swift */,
 				6A78B8CE7264A04D0F6D1C87 /* GlassCard.swift */,
 				93F5F5EBCE8096CC9153FE18 /* StatPill.swift */,
@@ -338,6 +350,7 @@
 				42DC73C3308FDF548DE643C6 /* Badges.swift in Sources */,
 				474EA312B6559B949B08DEC0 /* CanArtwork.swift in Sources */,
 				BD17CFEFE5DC83C0EC3A3E12 /* CanCountApp.swift in Sources */,
+				0E29E2561260F3CFBAF44768 /* CelebrationOverlay.swift in Sources */,
 				092EBE124E7A0A43A9F492A6 /* ConfettiBurst.swift in Sources */,
 				DA058F0C68011DF110C67195 /* DataScannerRepresentable.swift in Sources */,
 				B5EAC5DB11B50BFBC5EC103B /* GlassCard.swift in Sources */,
@@ -345,6 +358,7 @@
 				6BF357D93524CBEAB144E974 /* HomeView.swift in Sources */,
 				0F57388FA3FDA563F3757B6D /* LeaderboardService.swift in Sources */,
 				844EEB583CCFA4794B4ECD2A /* LeaderboardView.swift in Sources */,
+				49755630753767102AE10D07 /* LineupLoyaltySection.swift in Sources */,
 				C20ED568DE6AD6260D54EAD4 /* LogPipeline.swift in Sources */,
 				3B6264EDE1908A3A002B7F61 /* ManualLogSheet.swift in Sources */,
 				8C7B8BC7376BBF19C5D2A99B /* Models.swift in Sources */,
@@ -357,6 +371,8 @@
 				997C5D1DEEFA0B4C16461218 /* StatPill.swift in Sources */,
 				15206A668DBAD33EB4B0C953 /* StatsEngine.swift in Sources */,
 				109C933B5D657B968DCE9D56 /* StatsView.swift in Sources */,
+				57F5BCF13E7E5AE09905E1C0 /* StoreRadarSection.swift in Sources */,
+				E1DFA30B782CEECEF7EE3388 /* StoreRadarService.swift in Sources */,
 				750D7DA9B71017A3A24E5235 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -472,6 +488,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "CanCount uses the camera to scan Red Bull barcodes.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always access lets Store Radar notice stores even when the app is closed. It never tracks where you've been — just whether a Red Bull is nearby.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Store Radar nudges you to log a can when you're near a gas station, corner store, or grocery. Only if you turn it on.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
@@ -497,6 +515,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "CanCount uses the camera to scan Red Bull barcodes.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always access lets Store Radar notice stores even when the app is closed. It never tracks where you've been — just whether a Red Bull is nearby.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Store Radar nudges you to log a can when you're near a gas station, corner store, or grocery. Only if you turn it on.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;

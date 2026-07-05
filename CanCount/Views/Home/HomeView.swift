@@ -11,6 +11,7 @@ struct HomeView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     @Query(sort: \CanLog.timestamp, order: .reverse) private var logs: [CanLog]
 
@@ -21,6 +22,8 @@ struct HomeView: View {
     @State private var showManualLog = false
     @State private var showPRBanner = false
     @State private var prBannerToken = 0
+    @State private var isOnScreen = false
+    @State private var lastSeenDay = Calendar.current.startOfDay(for: .now)
 
     init() {}
 
@@ -29,7 +32,10 @@ struct HomeView: View {
     private var weekCount: Int { StatsEngine.weekCount(logs, weekOf: .now) }
     private var todayCount: Int { StatsEngine.todayCount(logs) }
     private var todayCaffeine: Int { StatsEngine.todayCaffeine(logs) }
-    private var streak: Int { profile?.streakCount ?? 0 }
+    /// Always derived from the logs themselves — a broken streak reads 0 the
+    /// moment the day flips, not whenever the next log happens to update the
+    /// stored profile counter.
+    private var streak: Int { StatsEngine.currentStreak(logs) }
     private var recentLogs: [CanLog] { Array(logs.prefix(5)) }
 
     /// The week's most-logged flavor. Falls back to all-time logs, then nil
@@ -94,8 +100,28 @@ struct HomeView: View {
         }
         .sensoryFeedback(.success, trigger: confettiTrigger)
         .onAppear(perform: handleAppear)
+        .onDisappear { isOnScreen = false }
         .onChange(of: logs.count) { oldCount, newCount in
             handleLogsChanged(from: oldCount, to: newCount)
+        }
+        // Midnight rollover: every "today" stat on this screen derives from
+        // .now, so a day change must force a recompute — otherwise yesterday's
+        // numbers linger until the next log. `lastSeenDay` is read by the
+        // onChange below, which makes it a body dependency: flipping it
+        // re-derives the pills, streak, and hero numeral.
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .NSCalendarDayChanged)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            lastSeenDay = Calendar.current.startOfDay(for: .now)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            lastSeenDay = Calendar.current.startOfDay(for: .now)
+        }
+        .onChange(of: lastSeenDay) { _, _ in
+            handleDayRollover()
         }
     }
 
@@ -328,6 +354,9 @@ struct HomeView: View {
     // MARK: - Lifecycle
 
     private func handleAppear() {
+        isOnScreen = true
+        lastSeenDay = Calendar.current.startOfDay(for: .now)
+
         if profile == nil {
             profile = UserProfile.current(in: modelContext)
         }
@@ -360,10 +389,28 @@ struct HomeView: View {
             }
         }
 
-        // Only celebrate when a log was ADDED and this week is now a record.
-        guard newCount > oldCount else { return }
-        if StatsEngine.isPersonalRecordWeek(logs, weekOf: .now) {
+        // Celebrate only when a log was ADDED, at the exact moment this week
+        // crossed the old record — and only while Home is actually on screen
+        // and the app is active (the scanner and manual-log paths run their
+        // own full-screen celebration; this confetti is a bonus, not an echo).
+        guard newCount > oldCount, isOnScreen, scenePhase == .active else { return }
+        if StatsEngine.becamePersonalRecord(logs, weekOf: .now) {
             celebratePR()
+        }
+    }
+
+    /// A new calendar day arrived while this view was live (midnight, or the
+    /// app returned to the foreground on a later day). The onChange read of
+    /// `lastSeenDay` already re-derives the today/streak pills; the hero
+    /// numeral just needs a retarget in case the week rolled over too.
+    private func handleDayRollover() {
+        let target = weekCount
+        if reduceMotion {
+            displayedWeekCount = target
+        } else {
+            withAnimation(Theme.spring) {
+                displayedWeekCount = target
+            }
         }
     }
 

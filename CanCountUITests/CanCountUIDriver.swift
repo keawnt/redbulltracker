@@ -46,8 +46,16 @@ final class CanCountUIDriver: XCTestCase {
         shot("03-scan-result-card")
         confirm.tap()
 
-        // Scanner dismisses itself ~0.45s after logging
-        XCTAssertTrue(wait(app.buttons["Scan a can"], 10), "Should morph back to Home after confirm")
+        // Can Drop celebration (reduced-motion layout under test settings)
+        let keepCold = app.buttons.containing(
+            NSPredicate(format: "label CONTAINS[c] 'keep it cold'")
+        ).firstMatch
+        XCTAssertTrue(wait(keepCold, 6), "Celebration should play after confirm")
+        sleep(1)
+        shot("03b-celebration-scan")
+        if keepCold.exists { keepCold.tap() }
+
+        XCTAssertTrue(wait(app.buttons["Scan a can"], 10), "Should morph back to Home after celebration")
         sleep(2)
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "label == '1 cans this week'")).firstMatch.exists,
@@ -72,6 +80,16 @@ final class CanCountUIDriver: XCTestCase {
         sleep(1)
         shot("06-manual-log-size")
         logIt.tap()
+
+        // Manual path celebration plays at the root after the sheet dismisses
+        let keepColdManual = app.buttons.containing(
+            NSPredicate(format: "label CONTAINS[c] 'keep it cold'")
+        ).firstMatch
+        if wait(keepColdManual, 6) {
+            sleep(1)
+            shot("06b-celebration-manual")
+            if keepColdManual.exists { keepColdManual.tap() }
+        }
 
         XCTAssertTrue(wait(app.buttons["Scan a can"], 10), "Manual sheet should dismiss back to Home")
         sleep(2)

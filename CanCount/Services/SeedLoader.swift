@@ -16,6 +16,7 @@ private struct SeedSKU: Decodable {
     let accentHex: String
     let canStyle: String
     let verified: Bool
+    let lineup: String
 
     enum CodingKeys: String, CodingKey {
         case barcode
@@ -30,6 +31,7 @@ private struct SeedSKU: Decodable {
         case accentHex = "accent_hex"
         case canStyle = "can_style"
         case verified
+        case lineup
     }
 }
 
@@ -37,6 +39,8 @@ private struct SeedSKU: Decodable {
 /// whenever the bundled database gains new cans). Upsert-by-barcode: rows
 /// already in the store are never overwritten, so scan-created SKUs from
 /// Open Food Facts and any future user corrections survive every relaunch.
+/// One exception: `lineup` heals on launch, so installs that predate lineup
+/// tracking (or shipped a wrong mapping) pick up the correct family.
 enum SeedLoader {
     static func seedIfNeeded(container: ModelContainer) {
         guard let url = Bundle.main.url(forResource: "redbull_skus", withExtension: "json"),
@@ -51,18 +55,27 @@ enum SeedLoader {
 
         let context = container.mainContext
 
-        // One fetch for all known barcodes beats N per-barcode lookups.
-        let existingBarcodes: Set<String>
+        // One fetch for all known SKUs beats N per-barcode lookups.
+        let existing: [String: SKU]
         do {
-            existingBarcodes = Set(try context.fetch(FetchDescriptor<SKU>()).map(\.barcode))
+            let all = try context.fetch(FetchDescriptor<SKU>())
+            existing = Dictionary(all.map { ($0.barcode, $0) }, uniquingKeysWith: { first, _ in first })
         } catch {
             // If the fetch itself fails, don't risk violating the unique
             // barcode constraint with blind inserts. Try again next launch.
             return
         }
 
-        var inserted = 0
-        for seed in seeds where !existingBarcodes.contains(seed.barcode) {
+        var dirty = 0
+        for seed in seeds {
+            if let sku = existing[seed.barcode] {
+                // Heal lineup only — everything else respects user corrections.
+                if sku.lineup != seed.lineup {
+                    sku.lineup = seed.lineup
+                    dirty += 1
+                }
+                continue
+            }
             let sku = SKU(
                 barcode: seed.barcode,
                 name: seed.name,
@@ -75,13 +88,14 @@ enum SeedLoader {
                 sugarFree: seed.sugarFree,
                 accentHex: seed.accentHex,
                 canStyle: seed.canStyle,
-                verified: seed.verified
+                verified: seed.verified,
+                lineup: seed.lineup
             )
             context.insert(sku)
-            inserted += 1
+            dirty += 1
         }
 
-        guard inserted > 0 else { return }
+        guard dirty > 0 else { return }
         try? context.save()
     }
 }

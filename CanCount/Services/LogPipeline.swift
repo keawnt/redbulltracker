@@ -25,6 +25,9 @@ struct LogResult {
     let log: CanLog
     let newBadges: [Badge]
     let isPersonalRecord: Bool
+    /// Whether context.save() actually succeeded. When false the UI must not
+    /// celebrate — the can never made it to disk.
+    let persisted: Bool
 }
 
 // MARK: - LogPipeline
@@ -50,11 +53,18 @@ enum LogPipeline {
         let newBadges = Badge.evaluate(profile: profile, logs: allLogs)
         profile.badges.append(contentsOf: newBadges.map(\.rawValue))
 
-        let isPersonalRecord = StatsEngine.isPersonalRecordWeek(allLogs, weekOf: entry.timestamp)
+        // Crossing moment only — one celebration per broken record, not one
+        // per log for the rest of a record week.
+        let isPersonalRecord = StatsEngine.becamePersonalRecord(allLogs, weekOf: entry.timestamp)
 
-        try? context.save()
+        var persisted = true
+        do {
+            try context.save()
+        } catch {
+            persisted = false
+        }
 
-        return LogResult(log: entry, newBadges: newBadges, isPersonalRecord: isPersonalRecord)
+        return LogResult(log: entry, newBadges: newBadges, isPersonalRecord: isPersonalRecord, persisted: persisted)
     }
 
     // MARK: Streak

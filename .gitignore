@@ -18,5 +18,6 @@ xcuserdata/
 .build/
 .swiftpm/
 
-# Extracted design refs (zip is the source of truth)
+# Extracted design refs (zips are the source of truth)
 mockups_extracted/
+scan_animation_design/

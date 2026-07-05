@@ -1,24 +1,331 @@
 import SwiftUI
 import CoreMotion
 
+// MARK: - CanPalette
+
+/// Everything needed to paint a can (and its celebration) for one flavor,
+/// ported verbatim from the Claude Design "Can Drop Celebration" prototype.
+/// Purple/Blue/Red Editions use the design's hand-tuned gradients; silver
+/// families use the design's aluminum ramp; everything else derives from the
+/// SKU's accent color in HSB space so new flavors land on-brand for free.
+struct CanPalette {
+    /// Five-stop horizontal body gradient at [0, 0.28, 0.46, 0.70, 1.0]:
+    /// dark edge → mid → bright center-left → mid → dark edge.
+    let bodyStops: [Color]
+    /// Diagonal stripe tint (a pale version of the flavor).
+    let stripe: Color
+    /// The word printed on the stripe (PURPLE / BLUE / ENERGY / …).
+    let word: String
+    /// Celebration flood circle color.
+    let flood: Color
+    /// Stage-light center for the flooded backdrop.
+    let bright: Color
+    /// Stage-light edges for the flooded backdrop.
+    let deep: Color
+
+    static let bodyStopLocations: [CGFloat] = [0, 0.28, 0.46, 0.70, 1.0]
+
+    var bodyGradient: LinearGradient {
+        LinearGradient(
+            stops: zip(bodyStops, Self.bodyStopLocations).map { .init(color: $0, location: $1) },
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    /// Design's aluminum ramp (silver Original can).
+    static let silverStops = ["#4d545c", "#aab2bc", "#dfe5ea", "#868f99", "#3f454c"].map { Color(hex: $0) }
+
+    static func palette(for sku: SKU?) -> CanPalette {
+        guard let sku else {
+            // The mascot silver Original with the racing-blue stripe.
+            return CanPalette(
+                bodyStops: silverStops,
+                stripe: Color(hex: "#2E5FDF"),
+                word: "ENERGY",
+                flood: Color(hex: "#2E5FDF"),
+                bright: Color(hex: "#4A7BFF"),
+                deep: Color(hex: "#122B72")
+            )
+        }
+
+        let word = canWord(for: sku)
+
+        // Hand-tuned design gradients for the three prototype editions.
+        switch sku.canStyle {
+        case "acai", "açaí":
+            return CanPalette(
+                bodyStops: ["#2a1547", "#7a3fb5", "#a86fdd", "#5f2f96", "#1f0f38"].map { Color(hex: $0) },
+                stripe: Color(hex: "#c9b3e8"), word: word,
+                flood: Color(hex: "#7B2FBE"), bright: Color(hex: "#9540DB"), deep: Color(hex: "#3E1466")
+            )
+        case "blueberry":
+            return CanPalette(
+                bodyStops: ["#0a1f4d", "#2E5FDF", "#7fa3ff", "#1d3f9f", "#071733"].map { Color(hex: $0) },
+                stripe: Color(hex: "#bcd0ff"), word: word,
+                flood: Color(hex: "#2E5FDF"), bright: Color(hex: "#4A7BFF"), deep: Color(hex: "#122B72")
+            )
+        case "watermelon":
+            return CanPalette(
+                bodyStops: ["#4d0316", "#c40a3a", "#ff5c82", "#8f0629", "#33020e"].map { Color(hex: $0) },
+                stripe: Color(hex: "#ffc9d6"), word: word,
+                flood: Color(hex: "#DB0A40"), bright: Color(hex: "#F53063"), deep: Color(hex: "#6E0521")
+            )
+        default:
+            break
+        }
+
+        // Silver families: aluminum body, flavor-accented stripe.
+        if sku.lineup == "original" || sku.lineup == "sugarfree" || sku.lineup == "zero" {
+            let accent = sku.accent
+            return CanPalette(
+                bodyStops: silverStops,
+                stripe: sku.lineup == "original" ? Color(hex: "#2E5FDF") : accent,
+                word: word,
+                flood: accent.canMixed(with: Color(hex: "#2E5FDF"), amount: 0.5),
+                bright: accent.canAdjusted(brightness: 1.15),
+                deep: accent.canAdjusted(saturation: 1.05, brightness: 0.35)
+            )
+        }
+
+        // Derived edition palette from the accent, matching the design's shape:
+        // dark edge / mid / bright 46% / mid / dark edge.
+        let accent = sku.accent
+        return CanPalette(
+            bodyStops: [
+                accent.canAdjusted(saturation: 1.15, brightness: 0.30),
+                accent.canAdjusted(brightness: 0.80),
+                accent.canAdjusted(saturation: 0.75, brightness: 1.18),
+                accent.canAdjusted(brightness: 0.60),
+                accent.canAdjusted(saturation: 1.15, brightness: 0.22),
+            ],
+            stripe: accent.canMixed(with: .white, amount: 0.65),
+            word: word,
+            flood: accent,
+            bright: accent.canAdjusted(brightness: 1.22),
+            deep: accent.canAdjusted(saturation: 1.1, brightness: 0.4)
+        )
+    }
+
+    /// PURPLE from "Red Bull Purple Edition", SUGARFREE, ZERO, ENERGY.
+    private static func canWord(for sku: SKU) -> String {
+        let name = sku.name
+        if let range = name.range(of: " Edition") {
+            let head = name[..<range.lowerBound]
+            if let editionWord = head.split(separator: " ").last {
+                return editionWord.uppercased()
+            }
+        }
+        switch sku.lineup {
+        case "sugarfree": return "SUGARFREE"
+        case "zero": return "ZERO"
+        case "original": return "ENERGY"
+        default: return sku.flavor.split(separator: " ").first.map { $0.uppercased() } ?? "ENERGY"
+        }
+    }
+}
+
+extension Color {
+    /// HSB-space tweak used to derive edition can gradients from an accent.
+    nonisolated func canAdjusted(saturation satScale: CGFloat = 1, brightness briScale: CGFloat = 1) -> Color {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(hue: h, saturation: min(1, s * satScale), brightness: min(1, b * briScale), opacity: a)
+    }
+
+    nonisolated func canMixed(with other: Color, amount: Double) -> Color {
+        let a = UIColor(self), b = UIColor(other)
+        var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa)
+        b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        let t = CGFloat(amount)
+        return Color(
+            red: ar + (br - ar) * t,
+            green: ag + (bg - ag) * t,
+            blue: ab + (bb - ab) * t
+        )
+    }
+}
+
+// MARK: - DesignCan
+
+/// The can, layer-for-layer from the design prototype:
+/// silver elliptical lid → five-stop cylindrical body → two -18° stripes →
+/// stripe word → cylindrical shading → sweeping specular sheen ("the glint").
+/// `sheenPhase` in [0, 1) drives the glint sweep; pass nil for a static can.
+struct DesignCan: View {
+    let palette: CanPalette
+    let sheenPhase: Double?
+    var showWord: Bool = true
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let lidH = h * 0.061
+            let bodyTop = h * 0.032
+
+            ZStack(alignment: .top) {
+                // Body
+                bodyLayer(w: w, h: h - bodyTop, lidH: lidH)
+                    .offset(y: bodyTop)
+
+                // Lid: linear-gradient(90deg, #5a636d, #c6cdd5 45%, #6b747e)
+                Ellipse()
+                    .fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color(hex: "#5a636d"), location: 0),
+                                .init(color: Color(hex: "#c6cdd5"), location: 0.45),
+                                .init(color: Color(hex: "#6b747e"), location: 1),
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .overlay(
+                        // inset 0 -2px shadow: darker lower lip on the lid
+                        Ellipse()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.clear, .black.opacity(0.5)],
+                                    startPoint: .center,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .frame(width: w * 0.82, height: lidH * 2)
+                    .position(x: w / 2, y: lidH)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func bodyLayer(w: CGFloat, h: CGFloat, lidH: CGFloat) -> some View {
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: w * 0.18,
+            bottomLeadingRadius: w * 0.20,
+            bottomTrailingRadius: w * 0.20,
+            topTrailingRadius: w * 0.18,
+            style: .continuous
+        )
+
+        return ZStack {
+            // Five-stop cylindrical flavor gradient
+            shape.fill(palette.bodyGradient)
+
+            ZStack {
+                // Two -18° stripes: heights 16.8% / 6.4%, tops 36% / 54%,
+                // opacities .78 / .42 — straight from the prototype CSS.
+                Rectangle()
+                    .fill(palette.stripe)
+                    .opacity(0.78)
+                    .frame(width: w * 2.4, height: h * 0.168)
+                    .rotationEffect(.degrees(-18))
+                    .position(x: w / 2, y: h * 0.44)
+
+                Rectangle()
+                    .fill(palette.stripe)
+                    .opacity(0.42)
+                    .frame(width: w * 2.4, height: h * 0.064)
+                    .rotationEffect(.degrees(-18))
+                    .position(x: w / 2, y: h * 0.60)
+
+                // The word rides the big stripe
+                if showWord {
+                    Text(palette.word)
+                        .font(.system(size: h * 0.059, weight: .black, design: .rounded))
+                        .kerning(h * 0.0114)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.4)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.35), radius: h * 0.014, y: h * 0.0045)
+                        .rotationEffect(.degrees(-18))
+                        .position(x: w / 2, y: h * 0.50)
+                        .frame(maxWidth: .infinity)
+                }
+
+                // Cylindrical shading:
+                // 90deg black.38 → white.28 @32% → clear @55% → black.45
+                Rectangle().fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .black.opacity(0.38), location: 0),
+                            .init(color: .white.opacity(0.28), location: 0.32),
+                            .init(color: .white.opacity(0), location: 0.55),
+                            .init(color: .black.opacity(0.45), location: 1),
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+
+                // The glint: 115° highlight band sweeping across (ccSheen)
+                if let sheenPhase {
+                    sheen(w: w, h: h, phase: sheenPhase)
+                } else {
+                    sheen(w: w, h: h, phase: 0.42)
+                }
+            }
+            // Pin to the can's exact bounds BEFORE clipping: the sheen band is
+            // 1.6× wider than the can, and without this the ZStack union (and
+            // therefore the clip shape) inflates to the sheen's width — the
+            // fat-can bug caught on the first celebration recording.
+            .frame(width: w, height: h)
+            .clipShape(shape)
+
+            // inset 0 2px 0 rgba(255,255,255,.4) — lit top edge
+            shape.strokeBorder(
+                LinearGradient(
+                    colors: [.white.opacity(0.4), .white.opacity(0.06)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: max(0.8, w * 0.008)
+            )
+        }
+        .frame(width: w, height: h)
+    }
+
+    /// linear-gradient(115deg, transparent 34%, white .34 44%, white .04 52%,
+    /// transparent 60%) with background-position swept 220% → -120%.
+    private func sheen(w: CGFloat, h: CGFloat, phase: Double) -> some View {
+        // Ease-in-out on the sweep, then map to an x offset across the can.
+        let eased = phase < 0.5 ? 2 * phase * phase : 1 - pow(-2 * phase + 2, 2) / 2
+        let x = w * (1.7 - 2.9 * eased)
+        return Rectangle()
+            .fill(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.34),
+                        .init(color: .white.opacity(0.34), location: 0.44),
+                        .init(color: .white.opacity(0.04), location: 0.52),
+                        .init(color: .clear, location: 0.60),
+                    ],
+                    startPoint: UnitPoint(x: 0.08, y: 0.28),   // ≈115°
+                    endPoint: UnitPoint(x: 0.92, y: 0.72)
+                )
+            )
+            .frame(width: w * 1.6, height: h)
+            .offset(x: x)
+    }
+}
+
 // MARK: - CanArtwork
 
-/// The app's hero object: a stylized Red Bull-esque can drawn entirely in
-/// SwiftUI. Layered aluminum gradients, a flavor-tinted body, an elliptical
-/// silver lid with a pull-tab hint, a slanted brand stripe crossing a yellow
-/// sun-disc emblem (brand *suggested*, never copied), a diagonal specular
-/// sheen, and — when `floating` — a soft yellow ambient glow beneath, a slow
-/// idle float, and CoreMotion parallax tilt.
-///
-/// `sku == nil` renders the silver/blue Original. Under Reduce Motion all
-/// movement (float, tilt, parallax) is disabled and the can simply hovers.
+/// The floating hero can. Verbatim design motion:
+/// - ccFloat: 4.5s levitation, y 0 → -14 and tilt -4° → -2°
+/// - ccGlow: the yellow ground pool breathes in counterphase
+/// - ccSheen: the glint sweeps every 5.5s
+/// plus CoreMotion parallax tilt on device. All of it timeline-driven, so it
+/// survives tab switches and vanishes entirely under Reduce Motion.
 struct CanArtwork: View {
     let sku: SKU?
     let height: CGFloat
     let floating: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var floatUp = false
     @State private var motionActive = false
 
     private let motion = ParallaxMotion.shared
@@ -29,85 +336,23 @@ struct CanArtwork: View {
         self.floating = floating
     }
 
-    // MARK: Metrics
+    // Design proportions: 88 × 196 → width ≈ 0.449 × height.
+    private var canHeight: CGFloat { floating ? height * 0.90 : height }
+    private var canWidth: CGFloat { canHeight * 0.449 }
+    private var palette: CanPalette { CanPalette.palette(for: sku) }
 
-    private var canHeight: CGFloat { floating ? height * 0.92 : height }
-    private var canWidth: CGFloat { canHeight * 0.40 }   // slim-can proportions
-
-    // MARK: Palette
-
-    private var bodyColor: Color { sku?.accent ?? Theme.silver }
-
-    /// Perceived luminance of the body color, used to pick contrasting art.
-    private var bodyLuminance: Double {
-        guard let hex = sku?.accentHex else { return 0.78 } // Original silver
-        let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var value: UInt64 = 0
-        Scanner(string: cleaned).scanHexInt64(&value)
-        let r = Double((value >> 16) & 0xFF) / 255
-        let g = Double((value >> 8) & 0xFF) / 255
-        let b = Double(value & 0xFF) / 255
-        return 0.299 * r + 0.587 * g + 0.114 * b
-    }
-
-    private var isLightBody: Bool { bodyLuminance > 0.62 }
-
-    private var stripeColors: [Color] {
-        isLightBody
-            ? [Theme.racingBlue, Theme.racingBlueDark]
-            : [.white.opacity(0.92), Theme.silver.opacity(0.85)]
-    }
-
-    private var wordmarkColor: Color {
-        isLightBody ? Theme.racingBlueDark : .white.opacity(0.94)
-    }
-
-    private var wordmark: String {
-        (sku?.flavor ?? "Energy").uppercased()
-    }
-
-    private var silverLight: Color { Color(hex: "#EDF1F5") }
-    private var silverMid: Color { Color(hex: "#B9C0C9") }
-    private var silverDark: Color { Color(hex: "#7C858F") }
-
-    // MARK: Motion
-
-    private var parallaxActive: Bool { floating && !reduceMotion }
-
-    private var parallaxRoll: Double { parallaxActive ? motion.roll * 0.22 : 0 }
-    private var parallaxPitch: Double { parallaxActive ? -motion.pitch * 0.22 : 0 }
-
-    private var floatOffset: CGFloat {
-        guard floating, !reduceMotion else { return 0 }
-        return floatUp ? -height * 0.030 : height * 0.012
-    }
-
-    private var idleTilt: Double {
-        guard floating, !reduceMotion else { return 0 }
-        return floatUp ? -1.3 : 1.3
-    }
-
-    // MARK: Body
+    private var animating: Bool { floating && !reduceMotion }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            if floating {
-                groundGlow
+        Group {
+            if animating {
+                TimelineView(.animation) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    composed(at: t)
+                }
+            } else {
+                composed(at: nil)
             }
-            can
-                .rotationEffect(.degrees(idleTilt))
-                .offset(y: floatOffset)
-                .rotation3DEffect(
-                    .radians(parallaxRoll),
-                    axis: (x: 0, y: 1, z: 0),
-                    perspective: 0.6
-                )
-                .rotation3DEffect(
-                    .radians(parallaxPitch),
-                    axis: (x: 1, y: 0, z: 0),
-                    perspective: 0.6
-                )
-                .padding(.bottom, floating ? canWidth * 0.20 : 0)
         }
         .frame(width: floating ? canWidth * 1.7 : canWidth, height: height)
         .onAppear(perform: startMotionIfNeeded)
@@ -116,203 +361,73 @@ struct CanArtwork: View {
         .accessibilityLabel(sku.map { "\($0.name) can" } ?? "Red Bull can")
     }
 
+    /// One frame of the hero. `t == nil` renders the static (Reduce Motion /
+    /// chip) pose.
+    private func composed(at t: TimeInterval?) -> some View {
+        // ccFloat: 0%/100% → y0 rot-4°; 50% → y-14 rot-2° (4.5s ease-in-out)
+        let floatPhase = t.map { ($0.truncatingRemainder(dividingBy: 4.5)) / 4.5 } ?? 0
+        let wave = cos(2 * .pi * floatPhase)   // 1 at rest, -1 at apex
+        let yOffset = t == nil ? 0 : -(height * 0.036) * (1 - wave)
+        let tilt = floating ? (t == nil ? -3.0 : -3.0 - wave) : 0
+        // ccSheen: 5.5s sweep
+        let sheenPhase = t.map { ($0.truncatingRemainder(dividingBy: 5.5)) / 5.5 }
+        // ccGlow: opacity .55↔.85, width 1↔1.12 in counterphase
+        let glowOpacity = t == nil ? 0.7 : 0.7 - 0.15 * wave
+        let glowScaleX = t == nil ? 1.06 : 1.06 - 0.06 * wave
+
+        return ZStack(alignment: .bottom) {
+            if floating {
+                ZStack {
+                    Ellipse()
+                        .fill(
+                            RadialGradient(
+                                colors: [Theme.energyYellow.opacity(0.5), .clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: canWidth * 0.75
+                            )
+                        )
+                        .frame(width: canWidth * 1.48, height: canWidth * 0.30)
+                        .blur(radius: 8)
+                        .scaleEffect(x: glowScaleX, y: 1)
+                        .opacity(glowOpacity)
+                    Ellipse()
+                        .fill(Color.black.opacity(0.45))
+                        .frame(width: canWidth * 0.95, height: canWidth * 0.20)
+                        .blur(radius: 5)
+                }
+                .accessibilityHidden(true)
+            }
+
+            DesignCan(palette: palette, sheenPhase: sheenPhase, showWord: canHeight >= 120)
+                .frame(width: canWidth, height: canHeight)
+                .shadow(color: .black.opacity(0.55), radius: canHeight * 0.09, y: canHeight * 0.041)
+                .rotationEffect(.degrees(tilt))
+                .offset(y: yOffset)
+                .rotation3DEffect(
+                    .radians(animating ? motion.roll * 0.22 : 0),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.6
+                )
+                .rotation3DEffect(
+                    .radians(animating ? -motion.pitch * 0.22 : 0),
+                    axis: (x: 1, y: 0, z: 0),
+                    perspective: 0.6
+                )
+                .padding(.bottom, floating ? canWidth * 0.16 : 0)
+        }
+    }
+
     private func startMotionIfNeeded() {
-        guard floating, !reduceMotion else { return }
+        guard animating else { return }
         motion.begin()
         motionActive = true
-        withAnimation(.easeInOut(duration: 2.7).repeatForever(autoreverses: true)) {
-            floatUp = true
-        }
     }
 
     private func stopMotionIfNeeded() {
         guard motionActive else { return }
         motion.end()
         motionActive = false
-    }
-
-    // MARK: Ground glow + contact shadow
-
-    private var groundGlow: some View {
-        ZStack {
-            // Soft yellow ambient pool
-            Ellipse()
-                .fill(Theme.energyYellow.opacity(0.30))
-                .frame(width: canWidth * 1.6, height: canWidth * 0.55)
-                .blur(radius: canWidth * 0.13)
-            // Contact shadow
-            Ellipse()
-                .fill(Color.black.opacity(0.50))
-                .frame(width: canWidth * 1.0, height: canWidth * 0.24)
-                .blur(radius: canWidth * 0.06)
-        }
-        // Breathes inversely with the float: shrinks slightly as the can rises.
-        .scaleEffect(x: floatUp ? 0.90 : 1.0, y: floatUp ? 0.92 : 1.0)
-        .opacity(floatUp ? 0.85 : 1.0)
-        .accessibilityHidden(true)
-    }
-
-    // MARK: The can itself
-
-    private var can: some View {
-        let w = canWidth
-        let h = canHeight
-        let lidH = w * 0.24
-        return ZStack(alignment: .top) {
-            canBody(width: w, bodyHeight: h - lidH / 2)
-                .offset(y: lidH / 2)
-            canLid(width: w, lidHeight: lidH)
-        }
-        .frame(width: w, height: h)
-        .compositingGroup()
-        .shadow(color: .black.opacity(0.45), radius: h * 0.05, x: 0, y: h * 0.035)
-    }
-
-    private func canBody(width w: CGFloat, bodyHeight bh: CGFloat) -> some View {
-        let shape = UnevenRoundedRectangle(
-            topLeadingRadius: w * 0.10,
-            bottomLeadingRadius: w * 0.16,
-            bottomTrailingRadius: w * 0.16,
-            topTrailingRadius: w * 0.10,
-            style: .continuous
-        )
-        return ZStack {
-            // Base flavor tint
-            shape.fill(bodyColor)
-            // Vertical depth: lit at the shoulder, darker at the base
-            shape.fill(
-                LinearGradient(
-                    colors: [.white.opacity(0.10), .clear, .black.opacity(0.26)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            // Printed artwork, clipped to the can silhouette
-            artwork(width: w, bodyHeight: bh)
-                .clipShape(shape)
-            // Cylindrical shading over the artwork so the print curves with the can
-            shape.fill(cylinderShading)
-            // Diagonal specular sheen
-            shape.fill(specularSheen)
-                .blendMode(.screen)
-            // Faint rim line to catch the canvas glow
-            shape.strokeBorder(.white.opacity(0.10), lineWidth: max(0.6, w * 0.012))
-        }
-        .compositingGroup()
-        .frame(width: w, height: bh)
-    }
-
-    private var cylinderShading: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: .black.opacity(0.42), location: 0.00),
-                .init(color: .clear, location: 0.16),
-                .init(color: .white.opacity(0.16), location: 0.30),
-                .init(color: .clear, location: 0.52),
-                .init(color: .black.opacity(0.10), location: 0.72),
-                .init(color: .black.opacity(0.45), location: 1.00),
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-    }
-
-    private var specularSheen: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: .clear, location: 0.30),
-                .init(color: .white.opacity(0.30), location: 0.40),
-                .init(color: .white.opacity(0.06), location: 0.47),
-                .init(color: .clear, location: 0.55),
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    /// The "print" on the can: neck band, sun-disc emblem, slanted stripe,
-    /// flavor wordmark, base shadow band.
-    private func artwork(width w: CGFloat, bodyHeight bh: CGFloat) -> some View {
-        ZStack {
-            // Silver neck band where the body meets the lid
-            Rectangle()
-                .fill(LinearGradient(colors: [silverLight, silverDark], startPoint: .top, endPoint: .bottom))
-                .frame(width: w, height: bh * 0.045)
-                .position(x: w / 2, y: bh * 0.0225)
-
-            // Sun-disc emblem
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(hex: "#FFE066"), Theme.energyYellow],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: w * 0.34
-                    )
-                )
-                .overlay(
-                    Circle().strokeBorder(.white.opacity(0.30), lineWidth: max(0.5, w * 0.014))
-                )
-                .frame(width: w * 0.62, height: w * 0.62)
-                .position(x: w / 2, y: bh * 0.33)
-
-            // Slanted brand stripe crossing the emblem
-            Rectangle()
-                .fill(LinearGradient(colors: stripeColors, startPoint: .leading, endPoint: .trailing))
-                .frame(width: w * 2.4, height: bh * 0.11)
-                .rotationEffect(.degrees(-24))
-                .position(x: w / 2, y: bh * 0.38)
-
-            // Flavor wordmark (skipped on mini cans where it would just blur)
-            if canHeight >= 140 {
-                Text(wordmark)
-                    .font(.system(size: canHeight * 0.052, weight: .heavy, design: .rounded))
-                    .kerning(canHeight * 0.006)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
-                    .foregroundStyle(wordmarkColor)
-                    .frame(width: w * 0.92)
-                    .position(x: w / 2, y: bh * 0.55)
-            }
-
-            // Base shadow band
-            Rectangle()
-                .fill(LinearGradient(colors: [.clear, .black.opacity(0.38)], startPoint: .top, endPoint: .bottom))
-                .frame(width: w, height: bh * 0.10)
-                .position(x: w / 2, y: bh * 0.95)
-        }
-        .frame(width: w, height: bh)
-    }
-
-    private func canLid(width w: CGFloat, lidHeight lh: CGFloat) -> some View {
-        ZStack {
-            // Outer rim
-            Ellipse()
-                .fill(
-                    LinearGradient(
-                        colors: [silverLight, silverMid, silverDark],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-            // Recessed top surface
-            Ellipse()
-                .fill(LinearGradient(colors: [silverDark, silverMid], startPoint: .top, endPoint: .bottom))
-                .scaleEffect(0.82)
-            // Rim highlight
-            Ellipse()
-                .strokeBorder(.white.opacity(0.55), lineWidth: max(0.5, w * 0.012))
-            // Pull-tab hint: ring + stem, foreshortened
-            Ellipse()
-                .strokeBorder(silverLight.opacity(0.9), lineWidth: max(0.6, w * 0.02))
-                .frame(width: w * 0.18, height: lh * 0.42)
-                .offset(x: w * 0.03, y: lh * 0.10)
-            Capsule()
-                .fill(silverLight)
-                .frame(width: w * 0.06, height: lh * 0.34)
-                .offset(x: -w * 0.055, y: -lh * 0.04)
-        }
-        .frame(width: w * 0.90, height: lh)
     }
 }
 
@@ -336,20 +451,7 @@ struct CanChip: View {
             )
             .frame(height: 7)
             Rectangle()
-                .fill(sku.accent)
-                .overlay(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .black.opacity(0.35), location: 0.00),
-                            .init(color: .clear, location: 0.25),
-                            .init(color: .white.opacity(0.25), location: 0.45),
-                            .init(color: .clear, location: 0.65),
-                            .init(color: .black.opacity(0.30), location: 1.00),
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .fill(CanPalette.palette(for: sku).bodyGradient)
         }
         .frame(width: 22, height: 30)
         .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))

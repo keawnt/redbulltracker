@@ -14,7 +14,7 @@ struct LeaderboardEntry: Identifiable, Equatable {
 // MARK: - LeaderboardService
 
 protocol LeaderboardService {
-    func entries(crew: Crew?, myWeeklyCount: Int) async -> [LeaderboardEntry]
+    func entries(crew: Crew?, myWeeklyCount: Int, myLastWeekCount: Int) async -> [LeaderboardEntry]
 }
 
 // MARK: - MockLeaderboardService
@@ -53,8 +53,11 @@ struct MockLeaderboardService: LeaderboardService {
                name: "Noor", seed: 31, flavors: ["Coconut", "Peach", "Sugarfree"]),
     ]
 
-    func entries(crew: Crew?, myWeeklyCount: Int) async -> [LeaderboardEntry] {
-        let week = Calendar(identifier: .iso8601).component(.weekOfYear, from: .now)
+    func entries(crew: Crew?, myWeeklyCount: Int, myLastWeekCount: Int) async -> [LeaderboardEntry] {
+        // Same weekly anchor as the user's own count (Calendar.current via
+        // StatsEngine.startOfWeek), so friends and you roll over on the exact
+        // same midnight — never on ISO Monday while the footer promises Sunday.
+        let week = Int(StatsEngine.startOfWeek(containing: .now).timeIntervalSinceReferenceDate / 604_800)
 
         var all = Self.friends.map { friend in
             let current = Self.weeklyCount(seed: friend.seed, week: week)
@@ -73,7 +76,7 @@ struct MockLeaderboardService: LeaderboardService {
             id: Self.youID,
             name: "You",
             weeklyCount: myWeeklyCount,
-            lastWeekDelta: 0,
+            lastWeekDelta: myWeeklyCount - myLastWeekCount,
             isYou: true,
             flavorSummary: [:]
         ))
@@ -87,7 +90,8 @@ struct MockLeaderboardService: LeaderboardService {
 
     // MARK: Deterministic numbers
 
-    /// Counts derive purely from the ISO week number — no randomness at
+    /// Counts derive purely from the week index (weeks since the reference
+    /// date, anchored to `StatsEngine.startOfWeek`) — no randomness at
     /// runtime, so ranks hold steady all week and reshuffle at the reset.
     private static func weeklyCount(seed: Int, week: Int) -> Int {
         // splitmix64-style scramble — the naive seed*(week+k) formula collides

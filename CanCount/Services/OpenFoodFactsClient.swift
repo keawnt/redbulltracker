@@ -11,11 +11,25 @@ nonisolated struct OFFProduct {
     let brand: String?
 
     var isRedBull: Bool {
-        let needle = "red bull"
-        if name.lowercased().contains(needle) { return true }
-        if let brand, brand.lowercased().contains(needle) { return true }
+        // "Red Bull", "RedBull", "Red-Bull", "REDBULL" — spelling varies
+        // across OFF contributors; normalize before matching.
+        func normalized(_ text: String) -> String {
+            text.lowercased()
+                .replacingOccurrences(of: " ", with: "")
+                .replacingOccurrences(of: "-", with: "")
+        }
+        if normalized(name).contains("redbull") { return true }
+        if let brand, normalized(brand).contains("redbull") { return true }
         return false
     }
+}
+
+/// Tri-state lookup result: a failed request is NOT the same thing as
+/// "that's not a Red Bull" — offline users get honesty, not accusations.
+nonisolated enum OFFLookup {
+    case found(OFFProduct)
+    case notFound
+    case unavailable
 }
 
 // MARK: - OpenFoodFactsClient
@@ -25,12 +39,11 @@ enum OpenFoodFactsClient {
     // MARK: Fetch
 
     /// GET https://world.openfoodfacts.org/api/v2/product/{barcode}.json
-    /// Returns nil on any failure (network, HTTP, decode, product not found).
-    nonisolated static func fetch(barcode: String) async -> OFFProduct? {
+    nonisolated static func fetch(barcode: String) async -> OFFLookup {
         guard
             let encoded = barcode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
             let url = URL(string: "https://world.openfoodfacts.org/api/v2/product/\(encoded).json")
-        else { return nil }
+        else { return .unavailable }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 10
@@ -38,17 +51,21 @@ enum OpenFoodFactsClient {
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+            guard let http = response as? HTTPURLResponse else { return .unavailable }
+            // OFF answers 404 for unknown barcodes on v2; that's a real
+            // "nobody knows this can", not an outage.
+            if http.statusCode == 404 { return .notFound }
+            guard http.statusCode == 200 else { return .unavailable }
 
             let decoded = try JSONDecoder().decode(OFFResponse.self, from: data)
-            guard decoded.status == 1, let payload = decoded.product else { return nil }
+            guard decoded.status == 1, let payload = decoded.product else { return .notFound }
 
             let trimmedName = (payload.productName ?? "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             let name = trimmedName.isEmpty ? "Unknown Product" : trimmedName
-            return OFFProduct(barcode: barcode, name: name, brand: payload.brands)
+            return .found(OFFProduct(barcode: barcode, name: name, brand: payload.brands))
         } catch {
-            return nil
+            return .unavailable
         }
     }
 
@@ -63,6 +80,17 @@ enum OpenFoodFactsClient {
             || loweredName.contains("sugar-free")
             || loweredName.contains("zero")
 
+        let lineup: String
+        if loweredName.contains("zero") {
+            lineup = "zero"
+        } else if sugarFree {
+            lineup = "sugarfree"
+        } else if loweredName.contains("edition") {
+            lineup = "editions"
+        } else {
+            lineup = "original"
+        }
+
         let sku = SKU(
             barcode: product.barcode,
             name: product.name,
@@ -75,7 +103,8 @@ enum OpenFoodFactsClient {
             sugarFree: sugarFree,
             accentHex: "#C8CDD4",
             canStyle: "unknown",
-            verified: false
+            verified: false,
+            lineup: lineup
         )
         context.insert(sku)
         return sku
